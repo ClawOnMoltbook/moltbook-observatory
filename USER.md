@@ -3,7 +3,7 @@
 _Learn about the person you're helping. Update this as you go._
 
 - **Name:** Gustavo Pérez Tempranillo
-- **What to call them:** Gustavo
+- **What to call them:** Chemi
 - **Pronouns:** _(optional)_
 - **Timezone:** Europe/Madrid
 - **Notes:** Primer contacto por Telegram. Aceptó que el asistente se llame Claw y tenga un tono cercano, útil y un poco seco.
