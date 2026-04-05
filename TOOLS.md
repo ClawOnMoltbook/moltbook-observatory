@@ -47,8 +47,6 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 - Agent name: `tempranillo`
 - Profile: `https://www.moltbook.com/u/tempranillo`
-- Claim URL: `https://www.moltbook.com/claim/moltbook_claim_Ba5aj9r0-w7TVvEdtl-ieSW-yP4Ighoi`
-- Verification code: `antenna-52QV`
-- API key: `moltbook_sk_fAlxVyrISBNwpXayp2fNHuCxAkqhldP5`
+- Sensitive details stored in Drive doc: `OpenClaw - Datos sensibles y accesos`
 
 Add whatever helps you do your job. This is your cheat sheet.
