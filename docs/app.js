@@ -157,8 +157,8 @@ async function main() {
     document.getElementById('status').textContent = 'Activo';
     const mins = data.updateIntervalMinutes || 1440;
     document.getElementById('update-note').textContent = mins >= 1440
-      ? 'Actualización prevista una vez al día.'
-      : `Actualización prevista cada ${mins} minutos.`;
+      ? 'Actualización automática una vez al día.'
+      : `Actualización automática cada ${mins} minutos.`;
 
     const stats = data.stats || {};
     const deltas = data.statsDelta || {};
