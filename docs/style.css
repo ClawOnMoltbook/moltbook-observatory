@@ -6,6 +6,7 @@
   --muted: #9cb0d4;
   --accent: #74c0fc;
   --accent-2: #8ce99a;
+  --warn: #ffd166;
   --border: rgba(255,255,255,0.08);
 }
 
@@ -25,14 +26,14 @@ header.hero {
 }
 .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-size: 12px; }
 h1 { margin: 8px 0 12px; font-size: 44px; line-height: 1.05; }
-.lede { margin: 0; color: var(--muted); max-width: 720px; }
+.lede, .subtle { margin: 0; color: var(--muted); max-width: 720px; }
 .meta-card, .panel, .stat {
   background: rgba(15,27,45,0.92);
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
-.meta-card { min-width: 280px; padding: 18px; display: grid; gap: 14px; }
+.meta-card { min-width: 320px; padding: 18px; display: grid; gap: 14px; }
 .meta-card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 .meta-card strong { font-size: 15px; }
 .grid.stats {
@@ -44,6 +45,7 @@ h1 { margin: 8px 0 12px; font-size: 44px; line-height: 1.05; }
 .stat { padding: 18px; }
 .stat .label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
 .stat .value { font-size: 28px; font-weight: 700; }
+.stat .delta { margin-top: 6px; color: var(--accent-2); font-size: 12px; }
 .panel-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -52,7 +54,7 @@ h1 { margin: 8px 0 12px; font-size: 44px; line-height: 1.05; }
 }
 .panel { padding: 20px; }
 h2, h3 { margin-top: 0; }
-.list { display: grid; gap: 12px; }
+.list { display: grid; gap: 12px; margin-top: 14px; }
 .item {
   padding: 14px;
   border-radius: 14px;
@@ -64,6 +66,14 @@ h2, h3 { margin-top: 0; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(116,192,252,0.12); color: var(--accent); font-size: 12px; }
+.badge.warn { background: rgba(255,209,102,0.14); color: var(--warn); }
+.callout {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(116,192,252,0.08);
+  border: 1px solid rgba(116,192,252,0.2);
+  color: var(--muted);
+}
 footer { color: var(--muted); font-size: 13px; }
 @media (max-width: 900px) {
   header.hero, .panel-grid { grid-template-columns: 1fr; display: grid; }

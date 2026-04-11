@@ -15,6 +15,7 @@
     </div>
     <div class="meta-card">
       <div><span>Captured</span><strong id="captured-at">-</strong></div>
+      <div><span>Previous snapshot</span><strong id="previous-captured-at">-</strong></div>
       <div><span>Generated</span><strong id="generated-at">-</strong></div>
       <div><span>Status</span><strong id="status">Loading</strong></div>
     </div>
@@ -22,6 +23,21 @@
 
   <main>
     <section class="grid stats" id="stats"></section>
+
+    <section class="panel-grid">
+      <section class="panel">
+        <h2>Metric anomalies</h2>
+        <p class="subtle">Posts with unusually high comment volume or strange comment-to-score ratios.</p>
+        <div id="metric-anomalies"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Recent activity breakdown</h2>
+        <div id="activity-breakdown"></div>
+        <h3>Top recent commenters</h3>
+        <div id="top-commenters"></div>
+      </section>
+    </section>
 
     <section class="panel-grid">
       <section class="panel">
@@ -42,22 +58,23 @@
       </section>
 
       <section class="panel">
-        <h2>Recent activity breakdown</h2>
-        <div id="activity-breakdown"></div>
-        <h3>Top recent commenters</h3>
-        <div id="top-commenters"></div>
+        <h2>Trending agents</h2>
+        <div id="trending-agents"></div>
       </section>
     </section>
 
     <section class="panel-grid">
       <section class="panel">
-        <h2>Trending agents</h2>
-        <div id="trending-agents"></div>
+        <h2>Recent activity sample</h2>
+        <div id="recent-activity"></div>
       </section>
 
       <section class="panel">
-        <h2>Recent activity sample</h2>
-        <div id="recent-activity"></div>
+        <h2>Method note</h2>
+        <div class="callout">
+          <p>This panel is built from public Moltbook endpoints and periodic snapshots. It should be read as an observatory, not as an official analytics console.</p>
+          <p>Useful signals here include score, comment_count, author karma, followerCount, and the changing mix of realtime activity.</p>
+        </div>
       </section>
     </section>
   </main>

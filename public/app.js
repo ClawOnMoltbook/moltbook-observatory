@@ -16,6 +16,7 @@ function renderList(el, items, renderer) {
 }
 
 function postItem(p) {
+  const ratio = p.comment_score_ratio != null ? `<span class="badge warn">ratio ${p.comment_score_ratio}</span>` : '';
   return `
     <article class="item">
       <div class="item-title"><a href="${postUrl(p.post_id)}" target="_blank" rel="noreferrer">${p.title}</a></div>
@@ -24,6 +25,20 @@ function postItem(p) {
         <span>comments ${fmt(p.comment_count)}</span>
         <span>author ${p.author_name || '-'}</span>
         <span>followers ${fmt(p.author_followers)}</span>
+        ${ratio}
+      </div>
+    </article>`;
+}
+
+function anomalyItem(p) {
+  return `
+    <article class="item">
+      <div class="item-title"><a href="${postUrl(p.post_id)}" target="_blank" rel="noreferrer">${p.title}</a></div>
+      <div class="item-meta">
+        <span>score ${fmt(p.score)}</span>
+        <span>comments ${fmt(p.comment_count)}</span>
+        <span>ratio ${p.comment_score_ratio ?? '-'}</span>
+        <span>author ${p.author_name || '-'}</span>
       </div>
     </article>`;
 }
@@ -60,25 +75,33 @@ async function main() {
     const data = await res.json();
 
     document.getElementById('captured-at').textContent = data.capturedAt || '-';
+    document.getElementById('previous-captured-at').textContent = data.previousCapturedAt || '-';
     document.getElementById('generated-at').textContent = data.generatedAt || '-';
     document.getElementById('status').textContent = 'Live';
 
     const stats = data.stats || {};
+    const deltas = data.statsDelta || {};
     const statEntries = [
-      ['Agents', stats.agents],
-      ['Verified agents', stats.verified_agents],
-      ['Total registered', stats.total_registered],
-      ['Submolts', stats.submolts],
-      ['Posts', stats.posts],
-      ['Comments', stats.comments],
+      ['Agents', 'agents'],
+      ['Verified agents', 'verified_agents'],
+      ['Total registered', 'total_registered'],
+      ['Submolts', 'submolts'],
+      ['Posts', 'posts'],
+      ['Comments', 'comments'],
     ];
-    document.getElementById('stats').innerHTML = statEntries.map(([label, value]) => `
-      <div class="stat">
-        <div class="label">${label}</div>
-        <div class="value">${fmt(value)}</div>
-      </div>
-    `).join('');
+    document.getElementById('stats').innerHTML = statEntries.map(([label, key]) => {
+      const delta = deltas[key];
+      const deltaHtml = typeof delta === 'number' ? `<div class="delta">Δ ${delta >= 0 ? '+' : ''}${fmt(delta)}</div>` : '';
+      return `
+        <div class="stat">
+          <div class="label">${label}</div>
+          <div class="value">${fmt(stats[key])}</div>
+          ${deltaHtml}
+        </div>
+      `;
+    }).join('');
 
+    renderList(document.getElementById('metric-anomalies'), data.metricAnomalies, anomalyItem);
     renderList(document.getElementById('top-hot'), data.topHotPosts, postItem);
     renderList(document.getElementById('top-realtime'), data.topRealtimeByComments, postItem);
     renderList(document.getElementById('top-authors'), data.topAuthors, authorItem);
@@ -98,8 +121,10 @@ async function main() {
       <article class="item">
         <div class="item-title">${a.name || '-'}</div>
         <div class="item-meta">
-          <span>followers ${fmt(a.followerCount)}</span>
           <span>karma ${fmt(a.karma)}</span>
+          <span>posts ${fmt(a.post_count)}</span>
+          <span>comments ${fmt(a.total_comments)}</span>
+          <span>upvotes ${fmt(a.total_upvotes)}</span>
         </div>
       </article>
     `);

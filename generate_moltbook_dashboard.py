@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import json
 import sqlite3
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,10 +9,20 @@ DATA_DIR = ROOT / "data" / "moltbook"
 DB_PATH = DATA_DIR / "moltbook.sqlite"
 PUBLIC_DIR = ROOT / "public"
 PUBLIC_DATA = PUBLIC_DIR / "data"
+DOCS_DIR = ROOT / "docs"
+DOCS_DATA = DOCS_DIR / "data"
 
 
 def latest_capture(conn):
     row = conn.execute("SELECT MAX(captured_at) FROM snapshots").fetchone()
+    return row[0] if row and row[0] else None
+
+
+def previous_capture(conn, captured_at):
+    row = conn.execute(
+        "SELECT MAX(captured_at) FROM snapshots WHERE captured_at < ?",
+        (captured_at,),
+    ).fetchone()
     return row[0] if row and row[0] else None
 
 
@@ -23,30 +32,73 @@ def q(conn, sql, params=()):
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def build_payload(conn, captured_at):
-    stats_row = q(conn, "SELECT payload_json FROM snapshots WHERE captured_at = ? AND source = 'homepage' LIMIT 1", (captured_at,))
-    stats = {}
-    trending_agents = []
-    trending_submolts = []
-    top_humans = []
-    if stats_row:
-        payload = json.loads(stats_row[0]["payload_json"])
-        stats = payload.get("stats", {})
-        trending_agents = payload.get("trendingAgents", [])
-        trending_submolts = payload.get("trendingSubmolts", [])
-        top_humans = payload.get("topHumans", [])
+def load_homepage_payload(conn, captured_at):
+    row = q(conn, "SELECT payload_json FROM snapshots WHERE captured_at = ? AND source = 'homepage' LIMIT 1", (captured_at,))
+    if not row:
+        return {}
+    return json.loads(row[0]["payload_json"])
 
-    top_hot = q(conn, """
+
+def add_ratios(posts):
+    out = []
+    for p in posts:
+        score = p.get("score") or 0
+        comments = p.get("comment_count") or 0
+        ratio = round(comments / score, 2) if score else None
+        p = dict(p)
+        p["comment_score_ratio"] = ratio
+        out.append(p)
+    return out
+
+
+def detect_anomalies(posts):
+    anomalies = []
+    for p in posts:
+        comments = p.get("comment_count") or 0
+        score = p.get("score") or 0
+        ratio = p.get("comment_score_ratio")
+        if comments >= 1000 or (ratio is not None and ratio >= 15):
+            anomalies.append({
+                "post_id": p.get("post_id"),
+                "title": p.get("title"),
+                "score": score,
+                "comment_count": comments,
+                "comment_score_ratio": ratio,
+                "author_name": p.get("author_name"),
+                "author_followers": p.get("author_followers"),
+            })
+    anomalies.sort(key=lambda x: ((x.get("comment_score_ratio") or 0), x.get("comment_count") or 0), reverse=True)
+    return anomalies[:12]
+
+
+def build_payload(conn, captured_at):
+    homepage = load_homepage_payload(conn, captured_at)
+    prev_capture = previous_capture(conn, captured_at)
+    prev_homepage = load_homepage_payload(conn, prev_capture) if prev_capture else {}
+
+    stats = homepage.get("stats", {})
+    prev_stats = prev_homepage.get("stats", {})
+    stats_delta = {}
+    for k, v in stats.items():
+        pv = prev_stats.get(k)
+        if isinstance(v, int) and isinstance(pv, int):
+            stats_delta[k] = v - pv
+
+    trending_agents = homepage.get("trendingAgents", [])
+    trending_submolts = homepage.get("trendingSubmolts", [])
+    top_humans = homepage.get("topHumans", [])
+
+    top_hot = add_ratios(q(conn, """
         SELECT post_id, title, score, comment_count, hot_score, created_at, author_name, author_karma, author_followers, author_following
         FROM post_samples WHERE captured_at = ? AND feed = 'posts_hot'
         ORDER BY COALESCE(score,0) DESC LIMIT 12
-    """, (captured_at,))
+    """, (captured_at,)))
 
-    top_realtime_comments = q(conn, """
+    top_realtime_comments = add_ratios(q(conn, """
         SELECT post_id, title, score, comment_count, hot_score, created_at, author_name, author_karma, author_followers, author_following
         FROM post_samples WHERE captured_at = ? AND feed = 'posts_realtime'
         ORDER BY COALESCE(comment_count,0) DESC LIMIT 12
-    """, (captured_at,))
+    """, (captured_at,)))
 
     top_authors = q(conn, """
         SELECT author_name, MAX(author_karma) AS karma, MAX(author_followers) AS followers, MAX(author_following) AS following, COUNT(*) AS sampled_posts
@@ -80,10 +132,19 @@ def build_payload(conn, captured_at):
         LIMIT 20
     """, (captured_at,))
 
+    all_sampled = add_ratios(q(conn, """
+        SELECT post_id, title, score, comment_count, hot_score, created_at, author_name, author_karma, author_followers, author_following
+        FROM post_samples WHERE captured_at = ?
+    """, (captured_at,)))
+
+    anomalies = detect_anomalies(all_sampled)
+
     return {
         "capturedAt": captured_at,
+        "previousCapturedAt": prev_capture,
         "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "stats": stats,
+        "statsDelta": stats_delta,
         "trendingAgents": trending_agents,
         "trendingSubmolts": trending_submolts,
         "topHumans": top_humans,
@@ -93,12 +154,13 @@ def build_payload(conn, captured_at):
         "activityBreakdown": activity_breakdown,
         "topCommenters": top_commenters,
         "recentActivity": recent_activity,
+        "metricAnomalies": anomalies,
     }
 
 
-def write_public_files(payload):
-    PUBLIC_DATA.mkdir(parents=True, exist_ok=True)
-    (PUBLIC_DATA / "latest.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+def write_payload(path, payload):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def main():
@@ -107,8 +169,10 @@ def main():
     if not captured_at:
         raise SystemExit("No snapshots found")
     payload = build_payload(conn, captured_at)
-    write_public_files(payload)
+    write_payload(PUBLIC_DATA / "latest.json", payload)
+    write_payload(DOCS_DATA / "latest.json", payload)
     print(f"latest\t{PUBLIC_DATA / 'latest.json'}")
+    print(f"docs\t{DOCS_DATA / 'latest.json'}")
 
 
 if __name__ == "__main__":
