@@ -74,26 +74,20 @@ function activityItem(a) {
     </article>`;
 }
 
-function drawHistoryChart(history) {
-  const canvas = document.getElementById('history-chart');
-  if (!canvas || !history || history.length < 2) return;
+function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !history || history.length < 1) return;
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
   ctx.clearRect(0, 0, width, height);
 
-  const padding = { top: 24, right: 24, bottom: 36, left: 42 };
+  const padding = { top: 24, right: 24, bottom: 36, left: 50 };
   const innerW = width - padding.left - padding.right;
   const innerH = height - padding.top - padding.bottom;
 
-  const series = [
-    { key: 'agents', color: '#74c0fc', label: 'Agentes' },
-    { key: 'posts', color: '#8ce99a', label: 'Posts' },
-    { key: 'comments', color: '#ff7b72', label: 'Comentarios' },
-    { key: 'submolts', color: '#ffd166', label: 'Submolts' },
-  ];
-
-  const allValues = history.flatMap(h => series.map(s => h[s.key]).filter(v => typeof v === 'number'));
+  const allValues = history.flatMap(h => series.map(s => h[(valueKeyPrefix ? valueKeyPrefix + s.key : s.key)]).filter(v => typeof v === 'number'));
+  if (!allValues.length) return;
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
   const range = Math.max(1, max - min);
@@ -109,20 +103,29 @@ function drawHistoryChart(history) {
   }
 
   series.forEach((s) => {
+    const key = valueKeyPrefix ? valueKeyPrefix + s.key : s.key;
+    const points = history.map(h => h[key]);
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    history.forEach((point, i) => {
-      const x = padding.left + (innerW * i / (history.length - 1));
-      const y = padding.top + innerH - (((point[s.key] - min) / range) * innerH);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+    let started = false;
+    points.forEach((val, i) => {
+      if (typeof val !== 'number') return;
+      const x = padding.left + (innerW * (history.length === 1 ? 0.5 : i / (history.length - 1)));
+      const y = padding.top + innerH - (((val - min) / range) * innerH);
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        ctx.lineTo(x, y);
+      }
     });
     ctx.stroke();
 
-    history.forEach((point, i) => {
-      const x = padding.left + (innerW * i / (history.length - 1));
-      const y = padding.top + innerH - (((point[s.key] - min) / range) * innerH);
+    points.forEach((val, i) => {
+      if (typeof val !== 'number') return;
+      const x = padding.left + (innerW * (history.length === 1 ? 0.5 : i / (history.length - 1)));
+      const y = padding.top + innerH - (((val - min) / range) * innerH);
       ctx.fillStyle = s.color;
       ctx.beginPath();
       ctx.arc(x, y, 3, 0, Math.PI * 2);
@@ -136,9 +139,11 @@ function drawHistoryChart(history) {
   ctx.fillText(fmt(min), 6, padding.top + innerH);
 
   const latest = history[history.length - 1];
-  document.getElementById('history-legend').innerHTML = series.map(s => `
-    <div class="mini-stat" style="color:${s.color}">${s.label}: ${fmt(latest[s.key])}</div>
-  `).join('');
+  document.getElementById(legendId).innerHTML = series.map(s => {
+    const key = valueKeyPrefix ? valueKeyPrefix + s.key : s.key;
+    const val = latest[key];
+    return `<div class="mini-stat" style="color:${s.color}">${s.label}: ${fmt(val)}</div>`;
+  }).join('');
 }
 
 async function main() {
@@ -174,7 +179,15 @@ async function main() {
       `;
     }).join('');
 
-    drawHistoryChart(data.history || []);
+    const dailySeries = [
+      { key: 'agents', color: '#74c0fc', label: 'Agentes' },
+      { key: 'posts', color: '#8ce99a', label: 'Posts' },
+      { key: 'comments', color: '#ff7b72', label: 'Comentarios' },
+      { key: 'submolts', color: '#ffd166', label: 'Submolts' },
+    ];
+    drawLineChart('daily-totals-chart', 'daily-totals-legend', data.dailyHistory || [], dailySeries);
+    drawLineChart('daily-growth-chart', 'daily-growth-legend', data.dailyHistory || [], dailySeries, 'delta_');
+
     renderList(document.getElementById('metric-anomalies'), data.metricAnomalies, anomalyItem);
     renderList(document.getElementById('top-hot'), data.topHotPosts, postItem);
     renderList(document.getElementById('top-realtime'), data.topRealtimeByComments, postItem);

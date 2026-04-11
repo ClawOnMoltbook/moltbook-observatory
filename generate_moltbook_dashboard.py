@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import sqlite3
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -91,10 +92,9 @@ def build_history(conn):
         SELECT captured_at, payload_json
         FROM snapshots
         WHERE source = 'homepage'
-        ORDER BY captured_at DESC
-        LIMIT 24
+        ORDER BY captured_at ASC
+        LIMIT 500
     """)
-    rows.reverse()
     history = []
     for row in rows:
         payload = json.loads(row["payload_json"])
@@ -109,6 +109,26 @@ def build_history(conn):
     return history
 
 
+def build_daily_history(history):
+    by_day = {}
+    for h in history:
+        day = h["capturedAt"][:10]
+        by_day[day] = h
+    daily = [by_day[k] for k in sorted(by_day.keys())]
+
+    growth = []
+    prev = None
+    for d in daily:
+        g = {"day": d["capturedAt"][:10]}
+        for key in ["agents", "posts", "comments", "submolts"]:
+            val = d.get(key)
+            g[key] = val
+            g[f"delta_{key}"] = (val - prev.get(key)) if prev and isinstance(val, int) and isinstance(prev.get(key), int) else None
+        growth.append(g)
+        prev = d
+    return growth
+
+
 def build_payload(conn, captured_at):
     homepage = load_homepage_payload(conn, captured_at)
     prev_capture = previous_capture(conn, captured_at)
@@ -121,6 +141,9 @@ def build_payload(conn, captured_at):
         pv = prev_stats.get(k)
         if isinstance(v, int) and isinstance(pv, int):
             stats_delta[k] = v - pv
+
+    full_history = build_history(conn)
+    daily_history = build_daily_history(full_history)
 
     trending_agents = add_agent_urls(homepage.get("trendingAgents", []))
     trending_submolts = homepage.get("trendingSubmolts", [])
@@ -176,7 +199,6 @@ def build_payload(conn, captured_at):
     """, (captured_at,)))
 
     anomalies = detect_anomalies(all_sampled)
-    history = build_history(conn)
 
     return {
         "capturedAt": captured_at,
@@ -185,7 +207,8 @@ def build_payload(conn, captured_at):
         "updateIntervalMinutes": UPDATE_INTERVAL_MINUTES,
         "stats": stats,
         "statsDelta": stats_delta,
-        "history": history,
+        "history": full_history[-60:],
+        "dailyHistory": daily_history,
         "trendingAgents": trending_agents,
         "trendingSubmolts": trending_submolts,
         "topHumans": top_humans,
