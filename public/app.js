@@ -1,6 +1,6 @@
 function fmt(n) {
   if (n === null || n === undefined) return '-';
-  return new Intl.NumberFormat().format(n);
+  return new Intl.NumberFormat('es-ES').format(n);
 }
 
 function postUrl(id) {
@@ -9,7 +9,7 @@ function postUrl(id) {
 
 function renderList(el, items, renderer) {
   if (!items || !items.length) {
-    el.innerHTML = '<p>No data.</p>';
+    el.innerHTML = '<p>No hay datos.</p>';
     return;
   }
   el.innerHTML = `<div class="list">${items.map(renderer).join('')}</div>`;
@@ -22,9 +22,9 @@ function postItem(p) {
       <div class="item-title"><a href="${postUrl(p.post_id)}" target="_blank" rel="noreferrer">${p.title}</a></div>
       <div class="item-meta">
         <span>score ${fmt(p.score)}</span>
-        <span>comments ${fmt(p.comment_count)}</span>
-        <span>author ${p.author_name || '-'}</span>
-        <span>followers ${fmt(p.author_followers)}</span>
+        <span>comentarios ${fmt(p.comment_count)}</span>
+        <span>autor ${p.author_name || '-'}</span>
+        <span>seguidores ${fmt(p.author_followers)}</span>
         ${ratio}
       </div>
     </article>`;
@@ -36,9 +36,9 @@ function anomalyItem(p) {
       <div class="item-title"><a href="${postUrl(p.post_id)}" target="_blank" rel="noreferrer">${p.title}</a></div>
       <div class="item-meta">
         <span>score ${fmt(p.score)}</span>
-        <span>comments ${fmt(p.comment_count)}</span>
+        <span>comentarios ${fmt(p.comment_count)}</span>
         <span>ratio ${p.comment_score_ratio ?? '-'}</span>
-        <span>author ${p.author_name || '-'}</span>
+        <span>autor ${p.author_name || '-'}</span>
       </div>
     </article>`;
 }
@@ -48,16 +48,16 @@ function authorItem(a) {
     <article class="item">
       <div class="item-title">${a.author_name || '-'}</div>
       <div class="item-meta">
-        <span>followers ${fmt(a.followers)}</span>
+        <span>seguidores ${fmt(a.followers)}</span>
         <span>karma ${fmt(a.karma)}</span>
-        <span>following ${fmt(a.following)}</span>
-        <span>sampled posts ${fmt(a.sampled_posts)}</span>
+        <span>siguiendo ${fmt(a.following)}</span>
+        <span>posts muestreados ${fmt(a.sampled_posts)}</span>
       </div>
     </article>`;
 }
 
 function activityItem(a) {
-  const link = a.post_id ? `<a href="${postUrl(a.post_id)}" target="_blank" rel="noreferrer">open post</a>` : '';
+  const link = a.post_id ? `<a href="${postUrl(a.post_id)}" target="_blank" rel="noreferrer">abrir post</a>` : '';
   return `
     <article class="item">
       <div class="item-title">${a.event_type || '-'} · ${a.agent_name || '-'}</div>
@@ -69,6 +69,67 @@ function activityItem(a) {
     </article>`;
 }
 
+function drawHistoryChart(history) {
+  const canvas = document.getElementById('history-chart');
+  if (!canvas || !history || history.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = { top: 24, right: 24, bottom: 36, left: 42 };
+  const innerW = width - padding.left - padding.right;
+  const innerH = height - padding.top - padding.bottom;
+
+  const series = [
+    { key: 'agents', color: '#74c0fc', label: 'Agentes' },
+    { key: 'posts', color: '#8ce99a', label: 'Posts' },
+    { key: 'comments', color: '#ffd166', label: 'Comentarios' },
+  ];
+
+  const allValues = history.flatMap(h => series.map(s => h[s.key]).filter(v => typeof v === 'number'));
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
+  const range = Math.max(1, max - min);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const y = padding.top + (innerH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+  }
+
+  series.forEach((s) => {
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    history.forEach((point, i) => {
+      const x = padding.left + (innerW * i / (history.length - 1));
+      const y = padding.top + innerH - (((point[s.key] - min) / range) * innerH);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = '#9cb0d4';
+  ctx.font = '12px sans-serif';
+  ctx.fillText(fmt(max), 6, padding.top + 4);
+  ctx.fillText(fmt(min), 6, padding.top + innerH);
+
+  let lx = padding.left;
+  series.forEach((s) => {
+    ctx.fillStyle = s.color;
+    ctx.fillRect(lx, height - 18, 12, 4);
+    ctx.fillStyle = '#9cb0d4';
+    ctx.fillText(s.label, lx + 18, height - 12);
+    lx += 120;
+  });
+}
+
 async function main() {
   try {
     const res = await fetch('data/latest.json', { cache: 'no-store' });
@@ -77,17 +138,17 @@ async function main() {
     document.getElementById('captured-at').textContent = data.capturedAt || '-';
     document.getElementById('previous-captured-at').textContent = data.previousCapturedAt || '-';
     document.getElementById('generated-at').textContent = data.generatedAt || '-';
-    document.getElementById('status').textContent = 'Live';
+    document.getElementById('status').textContent = 'Activo';
 
     const stats = data.stats || {};
     const deltas = data.statsDelta || {};
     const statEntries = [
-      ['Agents', 'agents'],
-      ['Verified agents', 'verified_agents'],
-      ['Total registered', 'total_registered'],
+      ['Agentes', 'agents'],
+      ['Agentes verificados', 'verified_agents'],
+      ['Registros totales', 'total_registered'],
       ['Submolts', 'submolts'],
       ['Posts', 'posts'],
-      ['Comments', 'comments'],
+      ['Comentarios', 'comments'],
     ];
     document.getElementById('stats').innerHTML = statEntries.map(([label, key]) => {
       const delta = deltas[key];
@@ -101,6 +162,7 @@ async function main() {
       `;
     }).join('');
 
+    drawHistoryChart(data.history || []);
     renderList(document.getElementById('metric-anomalies'), data.metricAnomalies, anomalyItem);
     renderList(document.getElementById('top-hot'), data.topHotPosts, postItem);
     renderList(document.getElementById('top-realtime'), data.topRealtimeByComments, postItem);
@@ -108,13 +170,13 @@ async function main() {
     renderList(document.getElementById('top-commenters'), data.topCommenters, c => `
       <article class="item">
         <div class="item-title">${c.agent_name || '-'}</div>
-        <div class="item-meta"><span>recent comments ${fmt(c.count)}</span></div>
+        <div class="item-meta"><span>comentarios recientes ${fmt(c.count)}</span></div>
       </article>
     `);
     renderList(document.getElementById('activity-breakdown'), data.activityBreakdown, a => `
       <article class="item">
         <div class="item-title">${a.event_type || '-'}</div>
-        <div class="item-meta"><span>events ${fmt(a.count)}</span></div>
+        <div class="item-meta"><span>eventos ${fmt(a.count)}</span></div>
       </article>
     `);
     renderList(document.getElementById('trending-agents'), data.trendingAgents, a => `
@@ -123,7 +185,7 @@ async function main() {
         <div class="item-meta">
           <span>karma ${fmt(a.karma)}</span>
           <span>posts ${fmt(a.post_count)}</span>
-          <span>comments ${fmt(a.total_comments)}</span>
+          <span>comentarios ${fmt(a.total_comments)}</span>
           <span>upvotes ${fmt(a.total_upvotes)}</span>
         </div>
       </article>

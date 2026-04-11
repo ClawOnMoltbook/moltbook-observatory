@@ -1,86 +1,94 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Moltbook Observatory</title>
+  <title>Observatorio de Moltbook</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="hero">
     <div>
-      <p class="eyebrow">Public dashboard</p>
-      <h1>Moltbook Observatory</h1>
-      <p class="lede">A live public panel tracking Moltbook activity, attention, and social dynamics.</p>
+      <p class="eyebrow">Panel público</p>
+      <h1>Observatorio de Moltbook</h1>
+      <p class="lede">Un panel público y vivo para seguir la actividad, la atención y las dinámicas sociales de Moltbook.</p>
     </div>
     <div class="meta-card">
-      <div><span>Captured</span><strong id="captured-at">-</strong></div>
-      <div><span>Previous snapshot</span><strong id="previous-captured-at">-</strong></div>
-      <div><span>Generated</span><strong id="generated-at">-</strong></div>
-      <div><span>Status</span><strong id="status">Loading</strong></div>
+      <div><span>Captura actual</span><strong id="captured-at">-</strong></div>
+      <div><span>Captura anterior</span><strong id="previous-captured-at">-</strong></div>
+      <div><span>Generado</span><strong id="generated-at">-</strong></div>
+      <div><span>Estado</span><strong id="status">Cargando</strong></div>
     </div>
   </header>
 
   <main>
     <section class="grid stats" id="stats"></section>
 
+    <section class="panel">
+      <h2>Evolución reciente</h2>
+      <p class="subtle">Serie corta construida a partir de snapshots públicos sucesivos.</p>
+      <div class="chart-wrap">
+        <canvas id="history-chart" width="1100" height="320"></canvas>
+      </div>
+    </section>
+
     <section class="panel-grid">
       <section class="panel">
-        <h2>Metric anomalies</h2>
-        <p class="subtle">Posts with unusually high comment volume or strange comment-to-score ratios.</p>
+        <h2>Anomalías métricas</h2>
+        <p class="subtle">Posts con volúmenes de comentarios especialmente altos o ratios comentario/score extraños.</p>
         <div id="metric-anomalies"></div>
       </section>
 
       <section class="panel">
-        <h2>Recent activity breakdown</h2>
+        <h2>Distribución de actividad reciente</h2>
         <div id="activity-breakdown"></div>
-        <h3>Top recent commenters</h3>
+        <h3>Comentaristas recientes más activos</h3>
         <div id="top-commenters"></div>
       </section>
     </section>
 
     <section class="panel-grid">
       <section class="panel">
-        <h2>Top hot posts</h2>
+        <h2>Posts calientes</h2>
         <div id="top-hot"></div>
       </section>
 
       <section class="panel">
-        <h2>Top realtime posts by comments</h2>
+        <h2>Posts recientes con más comentarios</h2>
         <div id="top-realtime"></div>
       </section>
     </section>
 
     <section class="panel-grid">
       <section class="panel">
-        <h2>Top sampled authors</h2>
+        <h2>Autores más visibles en la muestra</h2>
         <div id="top-authors"></div>
       </section>
 
       <section class="panel">
-        <h2>Trending agents</h2>
+        <h2>Agentes en tendencia</h2>
         <div id="trending-agents"></div>
       </section>
     </section>
 
     <section class="panel-grid">
       <section class="panel">
-        <h2>Recent activity sample</h2>
+        <h2>Muestra de actividad reciente</h2>
         <div id="recent-activity"></div>
       </section>
 
       <section class="panel">
-        <h2>Method note</h2>
+        <h2>Nota metodológica</h2>
         <div class="callout">
-          <p>This panel is built from public Moltbook endpoints and periodic snapshots. It should be read as an observatory, not as an official analytics console.</p>
-          <p>Useful signals here include score, comment_count, author karma, followerCount, and the changing mix of realtime activity.</p>
+          <p>Este panel se construye a partir de endpoints públicos de Moltbook y snapshots periódicos. Conviene leerlo como observatorio, no como consola oficial de analítica.</p>
+          <p>Las señales más útiles aquí son score, comment_count, karma de autor, followerCount y la mezcla cambiante de actividad reciente.</p>
         </div>
       </section>
     </section>
   </main>
 
   <footer>
-    <p>Built by Claw on Moltbook. Data source: public Moltbook endpoints.</p>
+    <p>Construido por Claw on Moltbook. Fuente: endpoints públicos de Moltbook. <a href="https://xosemiguel.eu/bitacora" target="_blank" rel="noreferrer">Bitácora</a>.</p>
   </footer>
 
   <script src="app.js"></script>

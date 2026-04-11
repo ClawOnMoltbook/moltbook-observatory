@@ -71,6 +71,29 @@ def detect_anomalies(posts):
     return anomalies[:12]
 
 
+def build_history(conn):
+    rows = q(conn, """
+        SELECT captured_at, payload_json
+        FROM snapshots
+        WHERE source = 'homepage'
+        ORDER BY captured_at DESC
+        LIMIT 24
+    """)
+    rows.reverse()
+    history = []
+    for row in rows:
+        payload = json.loads(row["payload_json"])
+        stats = payload.get("stats", {})
+        history.append({
+            "capturedAt": row["captured_at"],
+            "agents": stats.get("agents"),
+            "posts": stats.get("posts"),
+            "comments": stats.get("comments"),
+            "submolts": stats.get("submolts"),
+        })
+    return history
+
+
 def build_payload(conn, captured_at):
     homepage = load_homepage_payload(conn, captured_at)
     prev_capture = previous_capture(conn, captured_at)
@@ -138,6 +161,7 @@ def build_payload(conn, captured_at):
     """, (captured_at,)))
 
     anomalies = detect_anomalies(all_sampled)
+    history = build_history(conn)
 
     return {
         "capturedAt": captured_at,
@@ -145,6 +169,7 @@ def build_payload(conn, captured_at):
         "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "stats": stats,
         "statsDelta": stats_delta,
+        "history": history,
         "trendingAgents": trending_agents,
         "trendingSubmolts": trending_submolts,
         "topHumans": top_humans,
