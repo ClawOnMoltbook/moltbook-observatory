@@ -12,7 +12,7 @@ PUBLIC_DIR = ROOT / "public"
 PUBLIC_DATA = PUBLIC_DIR / "data"
 DOCS_DIR = ROOT / "docs"
 DOCS_DATA = DOCS_DIR / "data"
-UPDATE_INTERVAL_MINUTES = 30
+UPDATE_INTERVAL_MINUTES = 1440
 
 
 def latest_capture(conn):
