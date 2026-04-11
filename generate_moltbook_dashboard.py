@@ -11,6 +11,7 @@ PUBLIC_DIR = ROOT / "public"
 PUBLIC_DATA = PUBLIC_DIR / "data"
 DOCS_DIR = ROOT / "docs"
 DOCS_DATA = DOCS_DIR / "data"
+UPDATE_INTERVAL_MINUTES = 30
 
 
 def latest_capture(conn):
@@ -47,7 +48,20 @@ def add_ratios(posts):
         ratio = round(comments / score, 2) if score else None
         p = dict(p)
         p["comment_score_ratio"] = ratio
+        if p.get("author_name"):
+            p["author_url"] = f"https://www.moltbook.com/u/{p['author_name']}"
         out.append(p)
+    return out
+
+
+def add_agent_urls(agents):
+    out = []
+    for a in agents:
+        a = dict(a)
+        name = a.get("name") or a.get("author_name")
+        if name:
+            a["url"] = f"https://www.moltbook.com/u/{name}"
+        out.append(a)
     return out
 
 
@@ -66,6 +80,7 @@ def detect_anomalies(posts):
                 "comment_score_ratio": ratio,
                 "author_name": p.get("author_name"),
                 "author_followers": p.get("author_followers"),
+                "author_url": p.get("author_url"),
             })
     anomalies.sort(key=lambda x: ((x.get("comment_score_ratio") or 0), x.get("comment_count") or 0), reverse=True)
     return anomalies[:12]
@@ -107,7 +122,7 @@ def build_payload(conn, captured_at):
         if isinstance(v, int) and isinstance(pv, int):
             stats_delta[k] = v - pv
 
-    trending_agents = homepage.get("trendingAgents", [])
+    trending_agents = add_agent_urls(homepage.get("trendingAgents", []))
     trending_submolts = homepage.get("trendingSubmolts", [])
     top_humans = homepage.get("topHumans", [])
 
@@ -123,13 +138,13 @@ def build_payload(conn, captured_at):
         ORDER BY COALESCE(comment_count,0) DESC LIMIT 12
     """, (captured_at,)))
 
-    top_authors = q(conn, """
+    top_authors = add_agent_urls(q(conn, """
         SELECT author_name, MAX(author_karma) AS karma, MAX(author_followers) AS followers, MAX(author_following) AS following, COUNT(*) AS sampled_posts
         FROM post_samples WHERE captured_at = ?
         GROUP BY author_name
         ORDER BY followers DESC, karma DESC
         LIMIT 12
-    """, (captured_at,))
+    """, (captured_at,)))
 
     activity_breakdown = q(conn, """
         SELECT event_type, COUNT(*) AS count
@@ -138,14 +153,14 @@ def build_payload(conn, captured_at):
         ORDER BY count DESC
     """, (captured_at,))
 
-    top_commenters = q(conn, """
-        SELECT agent_name, COUNT(*) AS count
+    top_commenters = add_agent_urls(q(conn, """
+        SELECT agent_name AS author_name, COUNT(*) AS count
         FROM activity_samples
         WHERE captured_at = ? AND event_type = 'comment'
         GROUP BY agent_name
         ORDER BY count DESC, agent_name ASC
         LIMIT 12
-    """, (captured_at,))
+    """, (captured_at,)))
 
     recent_activity = q(conn, """
         SELECT event_type, agent_name, title, post_id, event_time
@@ -167,6 +182,7 @@ def build_payload(conn, captured_at):
         "capturedAt": captured_at,
         "previousCapturedAt": prev_capture,
         "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "updateIntervalMinutes": UPDATE_INTERVAL_MINUTES,
         "stats": stats,
         "statsDelta": stats_delta,
         "history": history,

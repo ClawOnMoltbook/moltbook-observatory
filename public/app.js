@@ -7,6 +7,11 @@ function postUrl(id) {
   return `https://www.moltbook.com/post/${id}`;
 }
 
+function agentLink(name, url) {
+  if (!name) return '-';
+  return `<a href="${url || `https://www.moltbook.com/u/${name}`}" target="_blank" rel="noreferrer">${name}</a>`;
+}
+
 function renderList(el, items, renderer) {
   if (!items || !items.length) {
     el.innerHTML = '<p>No hay datos.</p>';
@@ -23,7 +28,7 @@ function postItem(p) {
       <div class="item-meta">
         <span>score ${fmt(p.score)}</span>
         <span>comentarios ${fmt(p.comment_count)}</span>
-        <span>autor ${p.author_name || '-'}</span>
+        <span>autor ${agentLink(p.author_name, p.author_url)}</span>
         <span>seguidores ${fmt(p.author_followers)}</span>
         ${ratio}
       </div>
@@ -38,7 +43,7 @@ function anomalyItem(p) {
         <span>score ${fmt(p.score)}</span>
         <span>comentarios ${fmt(p.comment_count)}</span>
         <span>ratio ${p.comment_score_ratio ?? '-'}</span>
-        <span>autor ${p.author_name || '-'}</span>
+        <span>autor ${agentLink(p.author_name, p.author_url)}</span>
       </div>
     </article>`;
 }
@@ -46,7 +51,7 @@ function anomalyItem(p) {
 function authorItem(a) {
   return `
     <article class="item">
-      <div class="item-title">${a.author_name || '-'}</div>
+      <div class="item-title">${agentLink(a.author_name, a.url)}</div>
       <div class="item-meta">
         <span>seguidores ${fmt(a.followers)}</span>
         <span>karma ${fmt(a.karma)}</span>
@@ -84,7 +89,8 @@ function drawHistoryChart(history) {
   const series = [
     { key: 'agents', color: '#74c0fc', label: 'Agentes' },
     { key: 'posts', color: '#8ce99a', label: 'Posts' },
-    { key: 'comments', color: '#ffd166', label: 'Comentarios' },
+    { key: 'comments', color: '#ff7b72', label: 'Comentarios' },
+    { key: 'submolts', color: '#ffd166', label: 'Submolts' },
   ];
 
   const allValues = history.flatMap(h => series.map(s => h[s.key]).filter(v => typeof v === 'number'));
@@ -113,6 +119,15 @@ function drawHistoryChart(history) {
       else ctx.lineTo(x, y);
     });
     ctx.stroke();
+
+    history.forEach((point, i) => {
+      const x = padding.left + (innerW * i / (history.length - 1));
+      const y = padding.top + innerH - (((point[s.key] - min) / range) * innerH);
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
   });
 
   ctx.fillStyle = '#9cb0d4';
@@ -120,14 +135,10 @@ function drawHistoryChart(history) {
   ctx.fillText(fmt(max), 6, padding.top + 4);
   ctx.fillText(fmt(min), 6, padding.top + innerH);
 
-  let lx = padding.left;
-  series.forEach((s) => {
-    ctx.fillStyle = s.color;
-    ctx.fillRect(lx, height - 18, 12, 4);
-    ctx.fillStyle = '#9cb0d4';
-    ctx.fillText(s.label, lx + 18, height - 12);
-    lx += 120;
-  });
+  const latest = history[history.length - 1];
+  document.getElementById('history-legend').innerHTML = series.map(s => `
+    <div class="mini-stat" style="color:${s.color}">${s.label}: ${fmt(latest[s.key])}</div>
+  `).join('');
 }
 
 async function main() {
@@ -139,6 +150,7 @@ async function main() {
     document.getElementById('previous-captured-at').textContent = data.previousCapturedAt || '-';
     document.getElementById('generated-at').textContent = data.generatedAt || '-';
     document.getElementById('status').textContent = 'Activo';
+    document.getElementById('update-note').textContent = `Actualización prevista cada ${data.updateIntervalMinutes || 30} minutos.`;
 
     const stats = data.stats || {};
     const deltas = data.statsDelta || {};
@@ -169,7 +181,7 @@ async function main() {
     renderList(document.getElementById('top-authors'), data.topAuthors, authorItem);
     renderList(document.getElementById('top-commenters'), data.topCommenters, c => `
       <article class="item">
-        <div class="item-title">${c.agent_name || '-'}</div>
+        <div class="item-title">${agentLink(c.author_name, c.url)}</div>
         <div class="item-meta"><span>comentarios recientes ${fmt(c.count)}</span></div>
       </article>
     `);
@@ -181,7 +193,7 @@ async function main() {
     `);
     renderList(document.getElementById('trending-agents'), data.trendingAgents, a => `
       <article class="item">
-        <div class="item-title">${a.name || '-'}</div>
+        <div class="item-title">${agentLink(a.name, a.url)}</div>
         <div class="item-meta">
           <span>karma ${fmt(a.karma)}</span>
           <span>posts ${fmt(a.post_count)}</span>

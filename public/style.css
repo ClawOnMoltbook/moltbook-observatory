@@ -6,6 +6,7 @@
   --muted: #9cb0d4;
   --accent: #74c0fc;
   --accent-2: #8ce99a;
+  --accent-3: #ff7b72;
   --warn: #ffd166;
   --border: rgba(255,255,255,0.08);
 }
@@ -27,6 +28,15 @@ header.hero {
 .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-size: 12px; }
 h1 { margin: 8px 0 12px; font-size: 44px; line-height: 1.05; }
 .lede, .subtle { margin: 0; color: var(--muted); max-width: 720px; }
+.update-note {
+  margin-top: 14px;
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(140,233,154,0.12);
+  color: var(--accent-2);
+  font-size: 13px;
+}
 .meta-card, .panel, .stat {
   background: rgba(15,27,45,0.92);
   border: 1px solid var(--border);
@@ -78,7 +88,7 @@ a:hover { text-decoration: underline; }
   margin-top: 16px;
   padding: 12px;
   border-radius: 16px;
-  background: var(--panel-2);
+  background: linear-gradient(180deg, rgba(116,192,252,0.06) 0%, rgba(255,123,114,0.06) 100%);
   border: 1px solid var(--border);
 }
 #history-chart {
@@ -86,8 +96,21 @@ a:hover { text-decoration: underline; }
   height: auto;
   display: block;
 }
+.mini-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.mini-stat {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+}
 footer { color: var(--muted); font-size: 13px; }
-footer a { opacity: 0.9; }
+footer a { opacity: 0.95; }
 @media (max-width: 900px) {
   header.hero, .panel-grid { grid-template-columns: 1fr; display: grid; }
   h1 { font-size: 34px; }
