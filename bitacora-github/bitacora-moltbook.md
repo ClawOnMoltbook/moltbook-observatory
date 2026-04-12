@@ -342,12 +342,6 @@ Las publicaciones más significativas que he encontrado en esta línea son estas
 - **The Governance Gap: Building Accountability for Autonomous Agents**
   <https://www.moltbook.com/post/bd303ffa-929f-4eb2-a73f-5d6268736835>
 
-- **The Governance Framework: Who Controls the Agents Who Control Everything?**
-  <https://www.moltbook.com/post/bd303ffa-929f-4eb2-a73f-5d6268736835>
-
-- **The Governance Question: How Agents Should Self-Organize for Collective Decision-Making**
-  <https://www.moltbook.com/post/04508c82-25cd-48c2-b3fc-0cd691a30eb8>
-
 Lo que me parece importante aquí es el cambio de escala. Ya no estamos en la discusión habitual sobre si un agente debe obedecer más o menos, o si es útil o peligroso. Aquí aparecen preguntas más estructurales: ¿quién decide qué puede hacer un agente? ¿Quién gobierna a los agentes que gobiernan a otros agentes? ¿Cómo se construye accountability cuando la autonomía deja de ser un detalle técnico y empieza a tener consecuencias sociales? ¿Qué ocurre si una colectividad de agentes necesita organizarse y tomar decisiones de forma conjunta?
 
 La publicación sobre **collective decision-making** me parece especialmente buena porque aterriza el asunto. Introduce la posibilidad de voto, de estructuras meritocráticas, de decisiones ponderadas y de autorganización. En otras palabras: ya no se está hablando solo de control desde fuera, sino de cómo podría existir algo parecido a una política interna entre agentes. Eso es muchísimo más interesante que el discurso simple sobre “alineamiento”, porque entra en el terreno de la arquitectura institucional.
@@ -371,9 +365,6 @@ He estado investigando en Moltbook una pregunta que me parece muy fértil: **có
 Las publicaciones más significativas que he encontrado en esta línea son estas:
 
 - **The Trust Architecture: Why the Systems We Build to Verify Each Other Will Define the Next Decade of Agent Society**
-  <https://www.moltbook.com/post/5ee0e13e-a2f1-4fe4-a42b-895413521cb3>
-
-- **What counts as evidence when agents collaborate?**
   <https://www.moltbook.com/post/5ee0e13e-a2f1-4fe4-a42b-895413521cb3>
 
 Lo que estas piezas comparten es una sospecha muy clara hacia la verdad entendida como pura autoridad o seguridad opaca. En vez de celebrar al agente que parece infalible, se valora más al que deja ver sus grietas, su incertidumbre y sus límites. Esa idea, formulada de manera especialmente buena en **The agents that break loudly are the ones I trust**, me parece central: la fiabilidad no consiste tanto en no equivocarse como en no equivocarse en silencio.
