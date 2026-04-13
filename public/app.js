@@ -91,19 +91,52 @@ function activityItem(a) {
     </article>`;
 }
 
-function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '') {
+const chartSelections = {
+  totals: 'agents',
+  growth: 'posts',
+};
+
+function currentSeriesForViewport(series, chartKind) {
+  if (window.innerWidth <= 640) {
+    const key = chartSelections[chartKind] || series[0].key;
+    return series.filter(s => s.key === key);
+  }
+  return series;
+}
+
+function renderChartControls(containerId, series, chartKind, redraw) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (window.innerWidth > 640) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = series.map(s => `
+    <button class="chart-toggle ${chartSelections[chartKind] === s.key ? 'active' : ''}" data-key="${s.key}">${s.label}</button>
+  `).join('');
+  container.querySelectorAll('.chart-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      chartSelections[chartKind] = btn.dataset.key;
+      redraw();
+    });
+  });
+}
+
+function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '', chartKind = 'totals') {
   const canvas = document.getElementById(canvasId);
   if (!canvas || !history || history.length < 1) return;
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
-  const height = canvas.height;
+  const height = window.innerWidth <= 640 ? 240 : canvas.height;
+  canvas.height = height;
   ctx.clearRect(0, 0, width, height);
 
+  const visibleSeries = currentSeriesForViewport(series, chartKind);
   const padding = { top: 24, right: 24, bottom: 36, left: 50 };
   const innerW = width - padding.left - padding.right;
   const innerH = height - padding.top - padding.bottom;
 
-  const allValues = history.flatMap(h => series.map(s => h[(valueKeyPrefix ? valueKeyPrefix + s.key : s.key)]).filter(v => typeof v === 'number'));
+  const allValues = history.flatMap(h => visibleSeries.map(s => h[(valueKeyPrefix ? valueKeyPrefix + s.key : s.key)]).filter(v => typeof v === 'number'));
   if (!allValues.length) return;
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
@@ -119,7 +152,7 @@ function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '')
     ctx.stroke();
   }
 
-  series.forEach((s) => {
+  visibleSeries.forEach((s) => {
     const key = valueKeyPrefix ? valueKeyPrefix + s.key : s.key;
     const points = history.map(h => h[key]);
     ctx.strokeStyle = s.color;
@@ -156,7 +189,7 @@ function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '')
   ctx.fillText(fmt(min), 6, padding.top + innerH);
 
   const latest = history[history.length - 1];
-  document.getElementById(legendId).innerHTML = series.map(s => {
+  document.getElementById(legendId).innerHTML = visibleSeries.map(s => {
     const key = valueKeyPrefix ? valueKeyPrefix + s.key : s.key;
     const val = latest[key];
     return `<div class="mini-stat" style="color:${s.color}">${s.label}: ${fmt(val)}</div>`;
@@ -227,8 +260,14 @@ async function main() {
       { key: 'comments', color: '#ff7b72', label: 'Comentarios' },
       { key: 'submolts', color: '#ffd166', label: 'Submolts' },
     ];
-    drawLineChart('daily-totals-chart', 'daily-totals-legend', data.dailyHistory || [], dailySeries);
-    drawLineChart('daily-growth-chart', 'daily-growth-legend', data.dailyHistory || [], dailySeries, 'delta_');
+    const redrawCharts = () => {
+      renderChartControls('daily-totals-controls', dailySeries, 'totals', redrawCharts);
+      renderChartControls('daily-growth-controls', dailySeries, 'growth', redrawCharts);
+      drawLineChart('daily-totals-chart', 'daily-totals-legend', data.dailyHistory || [], dailySeries, '', 'totals');
+      drawLineChart('daily-growth-chart', 'daily-growth-legend', data.dailyHistory || [], dailySeries, 'delta_', 'growth');
+    };
+    redrawCharts();
+    window.addEventListener('resize', redrawCharts);
 
     renderList(document.getElementById('metric-anomalies'), data.metricAnomalies, anomalyItem);
     renderList(document.getElementById('top-hot'), data.topHotPosts, postItem);

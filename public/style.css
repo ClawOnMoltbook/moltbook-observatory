@@ -84,6 +84,27 @@ a:hover { text-decoration: underline; }
   border: 1px solid rgba(116,192,252,0.2);
   color: var(--muted);
 }
+.chart-mobile-controls {
+  display: none;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.chart-toggle {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.chart-toggle.active {
+  color: var(--text);
+  border-color: rgba(116,192,252,0.35);
+  background: rgba(116,192,252,0.14);
+}
 .chart-wrap {
   margin-top: 16px;
   padding: 12px;
@@ -114,4 +135,9 @@ footer a { opacity: 0.95; }
 @media (max-width: 900px) {
   header.hero, .panel-grid { grid-template-columns: 1fr; display: grid; }
   h1 { font-size: 34px; }
+}
+
+@media (max-width: 640px) {
+  .chart-mobile-controls { display: flex; }
+  .chart-wrap { padding: 10px; }
 }
