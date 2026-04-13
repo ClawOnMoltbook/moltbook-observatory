@@ -148,17 +148,39 @@ function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '')
 
 async function main() {
   try {
-    const res = await fetch('data/latest.json', { cache: 'no-store' });
+    const [res, healthRes] = await Promise.all([
+      fetch('data/latest.json', { cache: 'no-store' }),
+      fetch('data/health.json', { cache: 'no-store' }).catch(() => null),
+    ]);
     const data = await res.json();
+    let health = null;
+    if (healthRes && healthRes.ok) {
+      health = await healthRes.json();
+    }
 
     document.getElementById('captured-at').textContent = data.capturedAt || '-';
     document.getElementById('previous-captured-at').textContent = data.previousCapturedAt || '-';
     document.getElementById('generated-at').textContent = data.generatedAt || '-';
-    document.getElementById('status').textContent = 'Activo';
+    if (health) {
+      const statusMap = { ok: 'Activo', partial: 'Parcial', failed: 'Fallido' };
+      document.getElementById('status').textContent = statusMap[health.status] || 'Activo';
+    } else {
+      document.getElementById('status').textContent = 'Activo';
+    }
     const mins = data.updateIntervalMinutes || 1440;
-    document.getElementById('update-note').textContent = mins >= 1440
+    let note = mins >= 1440
       ? 'Actualización automática una vez al día.'
       : `Actualización automática cada ${mins} minutos.`;
+    if (health) {
+      if (health.status === 'partial') {
+        note += ` Última captura parcial: ${health.captured_at || '-'}.`;
+      } else if (health.status === 'failed') {
+        note += ` Último intento fallido: ${health.last_run || '-'}.`;
+      } else if (health.captured_at) {
+        note += ` Última captura exitosa: ${health.captured_at}.`;
+      }
+    }
+    document.getElementById('update-note').textContent = note;
 
     const stats = data.stats || {};
     const deltas = data.statsDelta || {};

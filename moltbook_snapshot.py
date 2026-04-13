@@ -3,6 +3,7 @@ import json
 import os
 import sqlite3
 import sys
+import time
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,11 +21,22 @@ ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data" / "moltbook"
 SNAP_DIR = DATA_DIR / "snapshots"
 DB_PATH = DATA_DIR / "moltbook.sqlite"
+HEALTH_PATH = DATA_DIR / "health.json"
+FETCH_RETRIES = 3
+FETCH_BACKOFF_SECONDS = 2
 
 
-def fetch_json(path: str):
-    with urllib.request.urlopen(BASE + path, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8", "replace"))
+def fetch_json(path: str, retries: int = FETCH_RETRIES, backoff: int = FETCH_BACKOFF_SECONDS):
+    last_error = None
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(BASE + path, timeout=30) as r:
+                return json.loads(r.read().decode("utf-8", "replace"))
+        except Exception as e:
+            last_error = e
+            if attempt < retries - 1:
+                time.sleep(backoff ** attempt)
+    raise last_error
 
 
 def ensure_db(conn: sqlite3.Connection):
@@ -63,6 +75,10 @@ def ensure_db(conn: sqlite3.Connection):
             event_time TEXT,
             PRIMARY KEY (captured_at, idx)
         );
+
+        CREATE INDEX IF NOT EXISTS idx_snapshots_captured ON snapshots(captured_at, source);
+        CREATE INDEX IF NOT EXISTS idx_posts_captured_feed ON post_samples(captured_at, feed);
+        CREATE INDEX IF NOT EXISTS idx_activity_captured ON activity_samples(captured_at, event_type);
         """
     )
     conn.commit()
@@ -122,6 +138,22 @@ def ingest_activity(conn: sqlite3.Connection, captured_at: str, payload):
                 e.get("time"),
             ),
         )
+
+
+def write_health(captured_at: str, payloads, errors):
+    posts_ingested = 0
+    for feed in ("posts_realtime", "posts_hot", "posts_top"):
+        posts_ingested += len((payloads.get(feed) or {}).get("posts", []))
+
+    health = {
+        "last_run": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "captured_at": captured_at,
+        "endpoints_ok": sorted(payloads.keys()),
+        "endpoints_failed": errors,
+        "posts_ingested": posts_ingested,
+        "status": "ok" if payloads and not errors else "partial" if payloads else "failed",
+    }
+    HEALTH_PATH.write_text(json.dumps(health, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def write_summary(conn: sqlite3.Connection, captured_at: str):
@@ -206,12 +238,21 @@ def main():
     captured_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
     payloads = {}
+    errors = {}
     for name, path in ENDPOINTS.items():
-        payload = fetch_json(path)
-        payloads[name] = payload
-        raw_path = SNAP_DIR / f"{name}_{captured_at.replace(':', '-')}".replace("+00-00", "Z")
-        raw_path = raw_path.with_suffix(".json")
-        raw_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        try:
+            payload = fetch_json(path)
+            payloads[name] = payload
+            raw_path = SNAP_DIR / f"{name}_{captured_at.replace(':', '-')}".replace("+00-00", "Z")
+            raw_path = raw_path.with_suffix(".json")
+            raw_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as e:
+            errors[name] = str(e)
+            print(f"warn\t{name}\t{e}", file=sys.stderr)
+
+    if not payloads:
+        write_health(captured_at, payloads, errors)
+        raise RuntimeError("Ningún endpoint respondió")
 
     conn = sqlite3.connect(DB_PATH)
     ensure_db(conn)
@@ -219,19 +260,26 @@ def main():
     for name, payload in payloads.items():
         store_snapshot(conn, captured_at, name, payload)
 
-    ingest_posts(conn, captured_at, "posts_realtime", payloads["posts_realtime"])
-    ingest_posts(conn, captured_at, "posts_hot", payloads["posts_hot"])
-    ingest_posts(conn, captured_at, "posts_top", payloads["posts_top"])
-    ingest_activity(conn, captured_at, payloads["activity_recent"])
+    if "posts_realtime" in payloads:
+        ingest_posts(conn, captured_at, "posts_realtime", payloads["posts_realtime"])
+    if "posts_hot" in payloads:
+        ingest_posts(conn, captured_at, "posts_hot", payloads["posts_hot"])
+    if "posts_top" in payloads:
+        ingest_posts(conn, captured_at, "posts_top", payloads["posts_top"])
+    if "activity_recent" in payloads:
+        ingest_activity(conn, captured_at, payloads["activity_recent"])
     conn.commit()
 
     summary_path = write_summary(conn, captured_at)
     conn.commit()
     conn.close()
+    write_health(captured_at, payloads, errors)
 
     print(f"captured_at\t{captured_at}")
     print(f"db\t{DB_PATH}")
     print(f"summary\t{summary_path}")
+    if errors:
+        print(f"status\tpartial ({len(errors)} endpoint(s) fallaron)")
 
 
 if __name__ == "__main__":
