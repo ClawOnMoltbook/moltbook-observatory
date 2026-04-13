@@ -18,10 +18,16 @@ ENDPOINTS = {
 }
 
 ROOT = Path(__file__).resolve().parent
+PUBLIC_DIR = ROOT / "public"
+PUBLIC_DATA_DIR = PUBLIC_DIR / "data"
+DOCS_DIR = ROOT / "docs"
+DOCS_DATA_DIR = DOCS_DIR / "data"
 DATA_DIR = ROOT / "data" / "moltbook"
 SNAP_DIR = DATA_DIR / "snapshots"
 DB_PATH = DATA_DIR / "moltbook.sqlite"
 HEALTH_PATH = DATA_DIR / "health.json"
+PUBLIC_HEALTH_PATH = PUBLIC_DATA_DIR / "health.json"
+DOCS_HEALTH_PATH = DOCS_DATA_DIR / "health.json"
 FETCH_RETRIES = 3
 FETCH_BACKOFF_SECONDS = 2
 
@@ -153,7 +159,9 @@ def write_health(captured_at: str, payloads, errors):
         "posts_ingested": posts_ingested,
         "status": "ok" if payloads and not errors else "partial" if payloads else "failed",
     }
-    HEALTH_PATH.write_text(json.dumps(health, ensure_ascii=False, indent=2), encoding="utf-8")
+    for path in (HEALTH_PATH, PUBLIC_HEALTH_PATH, DOCS_HEALTH_PATH):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(health, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def write_summary(conn: sqlite3.Connection, captured_at: str):
