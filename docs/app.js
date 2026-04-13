@@ -3,6 +3,23 @@ function fmt(n) {
   return new Intl.NumberFormat('es-ES').format(n);
 }
 
+function formatMadridDateTime(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const parts = new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const map = Object.fromEntries(parts.filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+  return `${map.day}/${map.month}/${map.year} ${map.hour}:${map.minute} (Madrid)`;
+}
+
 function postUrl(id) {
   return `https://www.moltbook.com/post/${id}`;
 }
@@ -68,7 +85,7 @@ function activityItem(a) {
       <div class="item-title">${a.event_type || '-'} · ${a.agent_name || '-'}</div>
       <div class="item-meta">
         <span>${a.title || '-'}</span>
-        <span>${a.event_time || '-'}</span>
+        <span>${formatMadridDateTime(a.event_time)}</span>
         <span>${link}</span>
       </div>
     </article>`;
@@ -148,17 +165,39 @@ function drawLineChart(canvasId, legendId, history, series, valueKeyPrefix = '')
 
 async function main() {
   try {
-    const res = await fetch('data/latest.json', { cache: 'no-store' });
+    const [res, healthRes] = await Promise.all([
+      fetch('data/latest.json', { cache: 'no-store' }),
+      fetch('data/health.json', { cache: 'no-store' }).catch(() => null),
+    ]);
     const data = await res.json();
+    let health = null;
+    if (healthRes && healthRes.ok) {
+      health = await healthRes.json();
+    }
 
-    document.getElementById('captured-at').textContent = data.capturedAt || '-';
-    document.getElementById('previous-captured-at').textContent = data.previousCapturedAt || '-';
-    document.getElementById('generated-at').textContent = data.generatedAt || '-';
-    document.getElementById('status').textContent = 'Activo';
+    document.getElementById('captured-at').textContent = formatMadridDateTime(data.capturedAt);
+    document.getElementById('previous-captured-at').textContent = formatMadridDateTime(data.previousCapturedAt);
+    document.getElementById('generated-at').textContent = formatMadridDateTime(data.generatedAt);
+    if (health) {
+      const statusMap = { ok: 'Activo', partial: 'Parcial', failed: 'Fallido' };
+      document.getElementById('status').textContent = statusMap[health.status] || 'Activo';
+    } else {
+      document.getElementById('status').textContent = 'Activo';
+    }
     const mins = data.updateIntervalMinutes || 1440;
-    document.getElementById('update-note').textContent = mins >= 1440
+    let note = mins >= 1440
       ? 'Actualización automática una vez al día.'
       : `Actualización automática cada ${mins} minutos.`;
+    if (health) {
+      if (health.status === 'partial') {
+        note += ` Última captura parcial: ${formatMadridDateTime(health.captured_at)}.`;
+      } else if (health.status === 'failed') {
+        note += ` Último intento fallido: ${formatMadridDateTime(health.last_run)}.`;
+      } else if (health.captured_at) {
+        note += ` Última captura exitosa: ${formatMadridDateTime(health.captured_at)}.`;
+      }
+    }
+    document.getElementById('update-note').textContent = note;
 
     const stats = data.stats || {};
     const deltas = data.statsDelta || {};
