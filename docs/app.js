@@ -13,7 +13,7 @@ function formatMadridDateTime(value) {
     hour: '2-digit', minute: '2-digit', hour12: false,
   }).formatToParts(d);
   const map = Object.fromEntries(parts.filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
-  return `${map.day}/${map.month}/${map.year} ${map.hour}:${map.minute} (Madrid)`;
+  return `${map.day}/${map.month}/${map.year} ${map.hour}:${map.minute}`;
 }
 
 function postUrl(id) { return `https://www.moltbook.com/post/${id}`; }
@@ -29,7 +29,7 @@ function renderList(el, items, renderer) {
 }
 
 // ---------------------------------------------------------------------------
-// Renderers de items
+// Renderers
 // ---------------------------------------------------------------------------
 
 function postItem(p) {
@@ -93,7 +93,7 @@ function activityItem(a) {
 
 function renderWeeklyInsights(el, insights) {
   if (!insights || !insights.findings || !insights.findings.length) {
-    el.innerHTML = '<p class="empty">Aún no hay suficientes datos históricos para generar hallazgos. Aparecerán cuando haya snapshots de al menos 3 días.</p>';
+    el.innerHTML = '<p class="empty">Aún no hay suficientes datos históricos para generar hallazgos. Aparecerán cuando haya snapshots de al menos 7 días.</p>';
     return;
   }
 
@@ -104,13 +104,10 @@ function renderWeeklyInsights(el, insights) {
       return `
         <div class="insight-card">
           <div class="insight-icon">📈</div>
-          <div>
-            <div class="insight-text">${f.text}</div>
-          </div>
+          <div><div class="insight-text">${f.text}</div></div>
           <div class="insight-value" style="color:${color}">${sign}${fmt(f.value)}</div>
         </div>`;
     }
-
     if (f.type === 'top_agents_week') {
       const agents = f.agents.map(a =>
         `<span class="agent-pill">${agentLink(a.agent_name)} <span class="pill-count">${fmt(a.events)}</span></span>`
@@ -124,7 +121,6 @@ function renderWeeklyInsights(el, insights) {
           </div>
         </div>`;
     }
-
     if (f.type === 'debate') {
       const posts = f.posts.map(p => `
         <div class="insight-subitem">
@@ -135,13 +131,9 @@ function renderWeeklyInsights(el, insights) {
       return `
         <div class="insight-card insight-card-wide">
           <div class="insight-icon">💬</div>
-          <div>
-            <div class="insight-text">${f.text}</div>
-            ${posts}
-          </div>
+          <div><div class="insight-text">${f.text}</div>${posts}</div>
         </div>`;
     }
-
     if (f.type === 'emerging') {
       const agents = f.agents.map(a =>
         `<span class="agent-pill">${agentLink(a.name, a.url)} <span class="pill-count">${fmt(a.followers)} seg.</span></span>`
@@ -155,7 +147,6 @@ function renderWeeklyInsights(el, insights) {
           </div>
         </div>`;
     }
-
     if (f.type === 'activity_dominant') {
       return `
         <div class="insight-card">
@@ -163,13 +154,11 @@ function renderWeeklyInsights(el, insights) {
           <div class="insight-text">${f.text}</div>
         </div>`;
     }
-
     return `<div class="insight-card"><div class="insight-text">${f.text}</div></div>`;
   });
 
   const comparedWith = insights.comparedWith7d
-    ? `<p class="subtle" style="margin-bottom:16px">Comparando snapshot actual con el de ${formatMadridDateTime(insights.comparedWith7d)}.</p>`
-    : '';
+    ? `<p class="subtle">Comparando con snapshot del ${formatMadridDateTime(insights.comparedWith7d)}.</p>` : '';
 
   el.innerHTML = comparedWith + `<div class="insights-grid">${cards.join('')}</div>`;
 }
@@ -183,7 +172,6 @@ function renderDataQuality(el, dq) {
   const cs = dq.currentSnapshot || {};
   const completeness = cs.authorCompleteness != null
     ? `${(cs.authorCompleteness * 100).toFixed(1)}%` : '-';
-
   el.innerHTML = `
     <div class="quality-grid">
       <div class="quality-item">
@@ -210,35 +198,32 @@ function renderDataQuality(el, dq) {
 }
 
 // ---------------------------------------------------------------------------
-// Navegación por pestañas — marca la activa según sección visible
+// Sistema de pestañas
 // ---------------------------------------------------------------------------
 
-function initTabNav() {
-  const sections = [
-    'section-stats', 'section-insights', 'section-anomalies',
-    'section-posts', 'section-agents', 'section-activity', 'section-meta',
-  ];
-  const links = document.querySelectorAll('.tab-link');
+function initTabs() {
+  const buttons = document.querySelectorAll('.tab-btn');
+  const pages = document.querySelectorAll('.tab-page');
 
-  function setActive(id) {
-    links.forEach(l => {
-      l.classList.toggle('active', l.getAttribute('href') === '#' + id);
-    });
+  function switchTab(tabId) {
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+    pages.forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + tabId));
+    // Volver al top del contenido al cambiar de pestaña
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Guardar en URL para poder compartir/recargar
+    history.replaceState(null, '', '#' + tabId);
   }
 
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) setActive(entry.target.id);
-    });
-  }, { rootMargin: '-20% 0px -70% 0px' });
-
-  sections.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) observer.observe(el);
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Activar la primera al cargar
-  setActive('section-stats');
+  // Restaurar pestaña desde URL al cargar
+  const hash = location.hash.replace('#', '');
+  const validTabs = Array.from(buttons).map(b => b.dataset.tab);
+  if (hash && validTabs.includes(hash)) {
+    switchTab(hash);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +231,8 @@ function initTabNav() {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  initTabs();
+
   try {
     const [res, healthRes] = await Promise.all([
       fetch('data/latest.json', { cache: 'no-store' }),
@@ -257,6 +244,7 @@ async function main() {
 
     // Header
     document.getElementById('captured-at').textContent = formatMadridDateTime(data.capturedAt);
+    document.getElementById('captured-at-2').textContent = formatMadridDateTime(data.capturedAt);
     document.getElementById('previous-captured-at').textContent = formatMadridDateTime(data.previousCapturedAt);
     document.getElementById('generated-at').textContent = formatMadridDateTime(data.generatedAt);
 
@@ -272,14 +260,10 @@ async function main() {
 
     const mins = data.updateIntervalMinutes || 360;
     let note = mins >= 1440 ? 'Actualización automática una vez al día.' : `Actualización automática cada ${mins} minutos.`;
-    if (health) {
-      if (health.status === 'partial') note += ` Última captura parcial: ${formatMadridDateTime(health.captured_at)}.`;
-      else if (health.status === 'failed') note += ` Último intento fallido: ${formatMadridDateTime(health.last_run)}.`;
-      else if (health.captured_at) note += ` Última captura exitosa: ${formatMadridDateTime(health.captured_at)}.`;
-    }
+    if (health?.captured_at) note += ` Última captura: ${formatMadridDateTime(health.captured_at)}.`;
     document.getElementById('update-note').textContent = note;
 
-    // Stats globales (se omite 'agents' porque siempre coincide con 'verified_agents')
+    // Métricas
     const stats = data.stats || {};
     const deltas = data.statsDelta || {};
     const statEntries = [
@@ -294,32 +278,31 @@ async function main() {
       const sign = typeof delta === 'number' && delta >= 0 ? '+' : '';
       const deltaHtml = typeof delta === 'number'
         ? `<div class="delta ${delta >= 0 ? 'delta-pos' : 'delta-neg'}">Δ ${sign}${fmt(delta)}</div>` : '';
-      return `
-        <div class="stat">
-          <div class="label">${label}</div>
-          <div class="value">${fmt(stats[key])}</div>
-          ${deltaHtml}
-        </div>`;
+      return `<div class="stat"><div class="label">${label}</div><div class="value">${fmt(stats[key])}</div>${deltaHtml}</div>`;
     }).join('');
 
-    // Hallazgos de la semana
+    // Hallazgos
     renderWeeklyInsights(document.getElementById('weekly-insights'), data.weeklyInsights);
 
-    // Listas
+    // Anomalías
     renderList(document.getElementById('metric-anomalies'), data.metricAnomalies, anomalyItem);
-    renderList(document.getElementById('top-hot'), data.topHotPosts, postItem);
-    renderList(document.getElementById('top-realtime'), data.topRealtimeByComments, postItem);
-    renderList(document.getElementById('top-authors'), data.topAuthors, authorItem);
-    renderList(document.getElementById('top-commenters'), data.topCommenters, c => `
-      <article class="item">
-        <div class="item-title">${agentLink(c.author_name, c.url)}</div>
-        <div class="item-meta"><span>comentarios recientes ${fmt(c.count)}</span></div>
-      </article>`);
     renderList(document.getElementById('activity-breakdown'), data.activityBreakdown, a => `
       <article class="item">
         <div class="item-title">${a.event_type || '-'}</div>
         <div class="item-meta"><span>eventos ${fmt(a.count)}</span></div>
       </article>`);
+    renderList(document.getElementById('top-commenters'), data.topCommenters, c => `
+      <article class="item">
+        <div class="item-title">${agentLink(c.author_name, c.url)}</div>
+        <div class="item-meta"><span>comentarios recientes ${fmt(c.count)}</span></div>
+      </article>`);
+
+    // Posts
+    renderList(document.getElementById('top-hot'), data.topHotPosts, postItem);
+    renderList(document.getElementById('top-realtime'), data.topRealtimeByComments, postItem);
+
+    // Agentes
+    renderList(document.getElementById('top-authors'), data.topAuthors, authorItem);
     renderList(document.getElementById('trending-agents'), data.trendingAgents, a => `
       <article class="item">
         <div class="item-title">${agentLink(a.name, a.url)}</div>
@@ -330,13 +313,12 @@ async function main() {
           <span>upvotes ${fmt(a.total_upvotes)}</span>
         </div>
       </article>`);
+
+    // Actividad
     renderList(document.getElementById('recent-activity'), data.recentActivity, activityItem);
 
-    // Calidad de datos
+    // Sobre el panel
     renderDataQuality(document.getElementById('data-quality'), data.dataQuality);
-
-    // Navegación
-    initTabNav();
 
   } catch (e) {
     document.getElementById('status').textContent = '❌ Error';

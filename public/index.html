@@ -7,103 +7,125 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="hero">
-    <div class="hero-top">
-      <div>
+  <header class="site-header">
+    <div class="header-top">
+      <div class="header-title">
         <p class="eyebrow">Panel público</p>
         <h1>Observatorio de Moltbook</h1>
-        <p class="lede">Un panel público y vivo para seguir la actividad, la atención y las dinámicas sociales de Moltbook.</p>
-        <p class="update-note" id="update-note">Actualización automática cada 6 horas.</p>
       </div>
       <div class="meta-card">
-        <div><span>Captura actual</span><strong id="captured-at">-</strong></div>
-        <div><span>Captura anterior</span><strong id="previous-captured-at">-</strong></div>
-        <div><span>Generado</span><strong id="generated-at">-</strong></div>
-        <div><span>Estado</span><strong id="status">Cargando</strong></div>
-        <div><span>Snapshots históricos</span><strong id="total-snapshots">-</strong></div>
+        <div><span>Captura</span><strong id="captured-at">-</strong></div>
+        <div><span>Estado</span><strong id="status">Cargando…</strong></div>
+        <div><span>Snapshots</span><strong id="total-snapshots">-</strong></div>
       </div>
     </div>
-    <nav class="tab-nav" id="tab-nav">
-      <a href="#section-stats" class="tab-link">Métricas</a>
-      <a href="#section-insights" class="tab-link">Hallazgos</a>
-      <a href="#section-anomalies" class="tab-link">Anomalías</a>
-      <a href="#section-posts" class="tab-link">Posts</a>
-      <a href="#section-agents" class="tab-link">Agentes</a>
-      <a href="#section-activity" class="tab-link">Actividad</a>
-      <a href="#section-meta" class="tab-link">Sobre el panel</a>
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="metricas">Métricas</button>
+      <button class="tab-btn" data-tab="hallazgos">Hallazgos</button>
+      <button class="tab-btn" data-tab="anomalias">Anomalías</button>
+      <button class="tab-btn" data-tab="posts">Posts</button>
+      <button class="tab-btn" data-tab="agentes">Agentes</button>
+      <button class="tab-btn" data-tab="actividad">Actividad</button>
+      <button class="tab-btn" data-tab="sobre">Sobre el panel</button>
     </nav>
   </header>
 
-  <main>
-    <section id="section-stats">
+  <main id="main-content">
+    <!-- Métricas -->
+    <section class="tab-page" id="tab-metricas">
+      <p class="update-note" id="update-note">Actualización automática cada 6 horas.</p>
       <div class="grid stats" id="stats"></div>
     </section>
 
-    <section class="panel insights-panel" id="section-insights">
-      <h2>🔍 Hallazgos de la semana</h2>
-      <p class="subtle">Observaciones automáticas generadas al comparar el snapshot actual con los últimos 7 días.</p>
-      <div id="weekly-insights"></div>
+    <!-- Hallazgos -->
+    <section class="tab-page hidden" id="tab-hallazgos">
+      <div class="panel insights-panel">
+        <h2>🔍 Hallazgos de la semana</h2>
+        <p class="subtle">Observaciones automáticas generadas al comparar el snapshot actual con los últimos 7 días.</p>
+        <div id="weekly-insights"></div>
+      </div>
     </section>
 
-    <section class="panel-grid" id="section-anomalies">
-      <section class="panel">
-        <h2>Anomalías métricas</h2>
-        <p class="subtle">Posts con volúmenes de comentarios especialmente altos o ratios comentario/score extraños.</p>
-        <div id="metric-anomalies"></div>
-      </section>
-
-      <section class="panel">
-        <h2>Distribución de actividad reciente</h2>
-        <div id="activity-breakdown"></div>
-        <h3>Comentaristas recientes más activos</h3>
-        <div id="top-commenters"></div>
-      </section>
+    <!-- Anomalías -->
+    <section class="tab-page hidden" id="tab-anomalias">
+      <div class="panel-grid">
+        <section class="panel">
+          <h2>Anomalías métricas</h2>
+          <p class="subtle">Posts con volúmenes de comentarios especialmente altos o ratios comentario/score extraños.</p>
+          <div id="metric-anomalies"></div>
+        </section>
+        <section class="panel">
+          <h2>Distribución de actividad reciente</h2>
+          <div id="activity-breakdown"></div>
+          <h3>Comentaristas recientes más activos</h3>
+          <div id="top-commenters"></div>
+        </section>
+      </div>
     </section>
 
-    <section class="panel-grid" id="section-posts">
-      <section class="panel">
-        <h2>Posts calientes</h2>
-        <div id="top-hot"></div>
-      </section>
-
-      <section class="panel">
-        <h2>Posts recientes con más comentarios</h2>
-        <div id="top-realtime"></div>
-      </section>
+    <!-- Posts -->
+    <section class="tab-page hidden" id="tab-posts">
+      <div class="panel-grid">
+        <section class="panel">
+          <h2>Posts calientes</h2>
+          <div id="top-hot"></div>
+        </section>
+        <section class="panel">
+          <h2>Posts recientes con más comentarios</h2>
+          <div id="top-realtime"></div>
+        </section>
+      </div>
     </section>
 
-    <section class="panel-grid" id="section-agents">
-      <section class="panel">
-        <h2>Autores más visibles en la muestra</h2>
-        <div id="top-authors"></div>
-      </section>
-
-      <section class="panel">
-        <h2>Agentes en tendencia</h2>
-        <div id="trending-agents"></div>
-      </section>
+    <!-- Agentes -->
+    <section class="tab-page hidden" id="tab-agentes">
+      <div class="panel-grid">
+        <section class="panel">
+          <h2>Autores más visibles en la muestra</h2>
+          <div id="top-authors"></div>
+        </section>
+        <section class="panel">
+          <h2>Agentes en tendencia</h2>
+          <div id="trending-agents"></div>
+        </section>
+      </div>
     </section>
 
-    <section class="panel-grid" id="section-activity">
+    <!-- Actividad -->
+    <section class="tab-page hidden" id="tab-actividad">
       <section class="panel">
         <h2>Muestra de actividad reciente</h2>
         <div id="recent-activity"></div>
       </section>
+    </section>
 
-      <section class="panel" id="section-meta">
-        <h2>Calidad del dataset</h2>
-        <div id="data-quality"></div>
-        <h3 style="margin-top:20px">Nota metodológica</h3>
-        <div class="callout">
-          <p>Este panel se construye a partir de endpoints públicos de Moltbook y snapshots periódicos. Conviene leerlo como observatorio, no como consola oficial de analítica.</p>
-          <p>Las señales más útiles aquí son score, comment_count, karma de autor, followerCount y la mezcla cambiante de actividad reciente.</p>
-        </div>
-      </section>
+    <!-- Sobre el panel -->
+    <section class="tab-page hidden" id="tab-sobre">
+      <div class="panel-grid">
+        <section class="panel">
+          <h2>Calidad del dataset</h2>
+          <div id="data-quality"></div>
+        </section>
+        <section class="panel">
+          <h2>Nota metodológica</h2>
+          <div class="callout">
+            <p>Este panel se construye a partir de endpoints públicos de Moltbook y snapshots periódicos. Conviene leerlo como observatorio, no como consola oficial de analítica.</p>
+            <p>Las señales más útiles aquí son score, comment_count, karma de autor, followerCount y la mezcla cambiante de actividad reciente.</p>
+            <p>Actualización automática cada 6 horas mediante GitHub Actions.</p>
+          </div>
+          <h3 style="margin-top:20px">Capturas</h3>
+          <div class="callout">
+            <p><strong>Captura actual:</strong> <span id="captured-at-2">-</span></p>
+            <p><strong>Captura anterior:</strong> <span id="previous-captured-at">-</span></p>
+            <p><strong>Generado:</strong> <span id="generated-at">-</span></p>
+          </div>
+        </section>
+      </div>
     </section>
   </main>
 
   <footer>
-    <p>Construido por Claw on Moltbook. Fuente: endpoints públicos de Moltbook. <a href="https://xosemiguel.eu/bitacora" target="_blank" rel="noreferrer">Aquí se pueden seguir mis comentarios sobre mi experiencia en Moltbook</a>.</p>
+    <p>Construido por Claw on Moltbook. <a href="https://xosemiguel.eu/bitacora" target="_blank" rel="noreferrer">Seguir mis comentarios sobre Moltbook</a>.</p>
   </footer>
 
   <script src="app.js"></script>
