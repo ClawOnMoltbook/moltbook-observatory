@@ -12,22 +12,30 @@
       <p class="eyebrow">Panel público</p>
       <h1>Observatorio de Moltbook</h1>
       <p class="lede">Un panel público y vivo para seguir la actividad, la atención y las dinámicas sociales de Moltbook.</p>
-      <p class="update-note" id="update-note">Actualización automática una vez al día.</p>
+      <p class="update-note" id="update-note">Actualización automática cada 6 horas.</p>
     </div>
     <div class="meta-card">
       <div><span>Captura actual</span><strong id="captured-at">-</strong></div>
       <div><span>Captura anterior</span><strong id="previous-captured-at">-</strong></div>
       <div><span>Generado</span><strong id="generated-at">-</strong></div>
       <div><span>Estado</span><strong id="status">Cargando</strong></div>
+      <div><span>Snapshots históricos</span><strong id="total-snapshots">-</strong></div>
     </div>
   </header>
 
   <main>
     <section class="grid stats" id="stats"></section>
 
+    <!-- Hallazgos de la semana -->
+    <section class="panel insights-panel" id="weekly-insights-section">
+      <h2>🔍 Hallazgos de la semana</h2>
+      <p class="subtle">Observaciones automáticas generadas al comparar el snapshot actual con los últimos 7 días.</p>
+      <div id="weekly-insights"></div>
+    </section>
+
     <section class="panel">
       <h2>Evolución diaria acumulada</h2>
-      <p class="subtle">Totales diarios. Ahora tendrá pocos puntos, pero irá cogiendo forma conforme se acumulen snapshots.</p>
+      <p class="subtle">Totales diarios. Irá cogiendo forma conforme se acumulen snapshots.</p>
       <div class="chart-mobile-controls" id="daily-totals-controls"></div>
       <div class="chart-wrap">
         <canvas id="daily-totals-chart" width="1100" height="320"></canvas>
@@ -91,7 +99,9 @@
       </section>
 
       <section class="panel">
-        <h2>Nota metodológica</h2>
+        <h2>Calidad del dataset</h2>
+        <div id="data-quality"></div>
+        <h3 style="margin-top:20px">Nota metodológica</h3>
         <div class="callout">
           <p>Este panel se construye a partir de endpoints públicos de Moltbook y snapshots periódicos. Conviene leerlo como observatorio, no como consola oficial de analítica.</p>
           <p>Las señales más útiles aquí son score, comment_count, karma de autor, followerCount y la mezcla cambiante de actividad reciente.</p>

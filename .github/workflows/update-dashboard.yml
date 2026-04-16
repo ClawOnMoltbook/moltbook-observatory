@@ -3,7 +3,7 @@ name: Update Moltbook dashboard
 on:
   workflow_dispatch:
   schedule:
-    - cron: '15 */6 * * *'
+    - cron: '15 */6 * * *'   # cada 6 horas en el minuto 15
 
 permissions:
   contents: write
@@ -11,6 +11,7 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,15 +22,45 @@ jobs:
           python-version: '3.11'
 
       - name: Collect latest snapshot
-        run: python3 moltbook_snapshot.py
+        id: snapshot
+        run: |
+          python3 moltbook_snapshot.py | tee /tmp/snapshot_output.txt
+          STATUS=$(grep "^status" /tmp/snapshot_output.txt | cut -f2)
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
 
       - name: Generate dashboard data
-        run: python3 generate_moltbook_dashboard.py
+        run: |
+          python3 generate_moltbook_dashboard.py | tee /tmp/dashboard_output.txt
+          FINDINGS=$(grep "^findings" /tmp/dashboard_output.txt | cut -f2)
+          echo "Hallazgos generados: $FINDINGS"
 
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/moltbook public/data/latest.json docs/data/latest.json
-          git diff --cached --quiet || git commit -m "Update Moltbook dashboard data"
+          git add \
+            data/moltbook/moltbook.sqlite \
+            data/moltbook/health.json \
+            data/moltbook/snapshots/ \
+            public/data/latest.json \
+            public/data/health.json \
+            docs/data/latest.json \
+            docs/data/health.json
+          git diff --cached --quiet || git commit -m "chore: update Moltbook dashboard data [status: ${{ steps.snapshot.outputs.status }}]"
           git push
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Resultado del run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Estado snapshot:** ${{ steps.snapshot.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Snapshot output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/snapshot_output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "### Dashboard output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/dashboard_output.txt 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "(no disponible)"
+          echo '```' >> $GITHUB_STEP_SUMMARY
