@@ -8,52 +8,44 @@
 </head>
 <body>
   <header class="hero">
-    <div>
-      <p class="eyebrow">Panel público</p>
-      <h1>Observatorio de Moltbook</h1>
-      <p class="lede">Un panel público y vivo para seguir la actividad, la atención y las dinámicas sociales de Moltbook.</p>
-      <p class="update-note" id="update-note">Actualización automática cada 6 horas.</p>
+    <div class="hero-top">
+      <div>
+        <p class="eyebrow">Panel público</p>
+        <h1>Observatorio de Moltbook</h1>
+        <p class="lede">Un panel público y vivo para seguir la actividad, la atención y las dinámicas sociales de Moltbook.</p>
+        <p class="update-note" id="update-note">Actualización automática cada 6 horas.</p>
+      </div>
+      <div class="meta-card">
+        <div><span>Captura actual</span><strong id="captured-at">-</strong></div>
+        <div><span>Captura anterior</span><strong id="previous-captured-at">-</strong></div>
+        <div><span>Generado</span><strong id="generated-at">-</strong></div>
+        <div><span>Estado</span><strong id="status">Cargando</strong></div>
+        <div><span>Snapshots históricos</span><strong id="total-snapshots">-</strong></div>
+      </div>
     </div>
-    <div class="meta-card">
-      <div><span>Captura actual</span><strong id="captured-at">-</strong></div>
-      <div><span>Captura anterior</span><strong id="previous-captured-at">-</strong></div>
-      <div><span>Generado</span><strong id="generated-at">-</strong></div>
-      <div><span>Estado</span><strong id="status">Cargando</strong></div>
-      <div><span>Snapshots históricos</span><strong id="total-snapshots">-</strong></div>
-    </div>
+    <nav class="tab-nav" id="tab-nav">
+      <a href="#section-stats" class="tab-link">Métricas</a>
+      <a href="#section-insights" class="tab-link">Hallazgos</a>
+      <a href="#section-anomalies" class="tab-link">Anomalías</a>
+      <a href="#section-posts" class="tab-link">Posts</a>
+      <a href="#section-agents" class="tab-link">Agentes</a>
+      <a href="#section-activity" class="tab-link">Actividad</a>
+      <a href="#section-meta" class="tab-link">Sobre el panel</a>
+    </nav>
   </header>
 
   <main>
-    <section class="grid stats" id="stats"></section>
+    <section id="section-stats">
+      <div class="grid stats" id="stats"></div>
+    </section>
 
-    <!-- Hallazgos de la semana -->
-    <section class="panel insights-panel" id="weekly-insights-section">
+    <section class="panel insights-panel" id="section-insights">
       <h2>🔍 Hallazgos de la semana</h2>
       <p class="subtle">Observaciones automáticas generadas al comparar el snapshot actual con los últimos 7 días.</p>
       <div id="weekly-insights"></div>
     </section>
 
-    <section class="panel">
-      <h2>Evolución diaria acumulada</h2>
-      <p class="subtle">Totales diarios. Irá cogiendo forma conforme se acumulen snapshots.</p>
-      <div class="chart-mobile-controls" id="daily-totals-controls"></div>
-      <div class="chart-wrap">
-        <canvas id="daily-totals-chart" width="1100" height="320"></canvas>
-      </div>
-      <div class="mini-stats" id="daily-totals-legend"></div>
-    </section>
-
-    <section class="panel">
-      <h2>Crecimiento diario</h2>
-      <p class="subtle">Incremento diario respecto al último snapshot disponible de cada día.</p>
-      <div class="chart-mobile-controls" id="daily-growth-controls"></div>
-      <div class="chart-wrap">
-        <canvas id="daily-growth-chart" width="1100" height="320"></canvas>
-      </div>
-      <div class="mini-stats" id="daily-growth-legend"></div>
-    </section>
-
-    <section class="panel-grid">
+    <section class="panel-grid" id="section-anomalies">
       <section class="panel">
         <h2>Anomalías métricas</h2>
         <p class="subtle">Posts con volúmenes de comentarios especialmente altos o ratios comentario/score extraños.</p>
@@ -68,7 +60,7 @@
       </section>
     </section>
 
-    <section class="panel-grid">
+    <section class="panel-grid" id="section-posts">
       <section class="panel">
         <h2>Posts calientes</h2>
         <div id="top-hot"></div>
@@ -80,7 +72,7 @@
       </section>
     </section>
 
-    <section class="panel-grid">
+    <section class="panel-grid" id="section-agents">
       <section class="panel">
         <h2>Autores más visibles en la muestra</h2>
         <div id="top-authors"></div>
@@ -92,13 +84,13 @@
       </section>
     </section>
 
-    <section class="panel-grid">
+    <section class="panel-grid" id="section-activity">
       <section class="panel">
         <h2>Muestra de actividad reciente</h2>
         <div id="recent-activity"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="section-meta">
         <h2>Calidad del dataset</h2>
         <div id="data-quality"></div>
         <h3 style="margin-top:20px">Nota metodológica</h3>
