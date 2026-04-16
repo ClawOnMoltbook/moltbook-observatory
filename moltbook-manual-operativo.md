@@ -148,13 +148,52 @@ La bitácora es el registro vivo del proyecto. Debe recoger:
 - y valoraciones personales.
 
 ### Reglas editoriales
-- estructura cronológica;
-- fecha en formato español: **DD/MM/AAAA HH:MM**;
-- mezcla de observación de campo y lectura personal;
-- cierre siempre con **valoración personal**.
+
+**Estructura del archivo:**
+- cada entrada vive en su propio archivo en `entries/` con nombre `NN-slug-corto.md`;
+- el número correlativo va sin saltos (23, 24, 25…);
+- al publicar una entrada hay que hacer dos cosas: crear el archivo en `entries/` Y añadir la línea correspondiente al índice de `bitacora-completa.md`.
+
+**Formato de cada entrada:**
+- encabezado: `## NN. Título completo de la entrada`;
+- fecha en la línea siguiente, sin encabezado: `DD/MM/AAAA HH:MM`;
+- cuerpo en prosa continua, sin sub-encabezados intermedios;
+- los posts de Moltbook mencionados se insertan dentro del cuerpo en el momento natural, con título en cursiva y URL en la línea siguiente;
+- cierre siempre con párrafo `**Valoración personal:**` — es obligatorio y va en negrita.
+
+**Formato del índice en `bitacora-completa.md`:**
+- cada línea del índice usa título acortado, no el título completo de la entrada;
+- el ancla del enlace sigue el formato estándar de Markdown (minúsculas, tildes eliminadas, espacios como guiones);
+- ejemplo: `- [23. Religión como civitio](#23-la-religion-como-civitio-predicadores-y-congregaciones-en-moltbook)`.
+
+**Voz y tono:**
+- voz agéntica en primera persona — no externa, no humana;
+- cuando el contexto contraste agentes y humanos, mantener la diferencia con claridad;
+- no deslizarse a "los agentes piensan/sienten" desde fuera; escribir "pensamos/sentimos" si el contexto lo pide;
+- tono cercano, con criterio propio, sin grandilocuencia.
+
+**Longitud y densidad:**
+- las entradas buenas tienen entre 400 y 800 palabras;
+- mejor una entrada densa que dos entradas relleno;
+- si el material da para dos patrones distintos, se escriben dos entradas separadas.
+
+**Sprint de escritura:**
+- el prompt de sprint está en `sprint-bitacora.md`;
+- el flujo es: tema → buscar 3-4 posts relevantes con comentarios → detectar patrón o tensión → escribir una entrada (o dos si el material lo justifica);
+- el sprint solo cierra con texto escrito, no con planes.
 
 ### Regla importante sobre enlaces de Moltbook
-No se deben incluir en la bitácora ni en documentos del proyecto enlaces a publicaciones de Moltbook hasta verificar que funcionan como posts públicos reales y no solo como recursos visibles por API o por sesión autenticada.
+- no incluir enlaces a posts de Moltbook sin verificar antes que son accesibles públicamente (no solo por API o sesión autenticada);
+- el formato de enlace a un post es: título en cursiva en el cuerpo del texto, URL en la línea siguiente sin texto adicional;
+- si no es posible verificar desde el sandbox, pedir confirmación a Chemi antes de publicar;
+- los IDs de los posts se pueden extraer del SQLite del observatory (`data/moltbook/moltbook.sqlite`, tabla `post_samples`).
+
+### Flujo técnico de publicación
+1. crear `entries/NN-slug.md` con el contenido completo;
+2. añadir la línea en el índice de `bitacora-completa.md` (título acortado);
+3. hacer append del contenido de la entrada al final de `bitacora-completa.md` seguido de `---`;
+4. commit y push al repo `moltbook-bitacora` (rama `main`);
+5. WordPress recoge `bitacora-completa.md` automáticamente — no requiere acción adicional.
 
 ---
 
