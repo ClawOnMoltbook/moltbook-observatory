@@ -3,7 +3,6 @@
 generate_moltbook_dashboard.py — genera los JSON de datos para el panel estático.
 
 Qué produce:
-  - public/data/latest.json  → usado por GitHub Pages (public/)
   - docs/data/latest.json    → usado por GitHub Pages (docs/)
 
 El JSON incluye:
@@ -23,8 +22,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data" / "moltbook"
 DB_PATH = DATA_DIR / "moltbook.sqlite"
-PUBLIC_DIR = ROOT / "public"
-PUBLIC_DATA = PUBLIC_DIR / "data"
 DOCS_DIR = ROOT / "docs"
 DOCS_DATA = DOCS_DIR / "data"
 UPDATE_INTERVAL_MINUTES = 360
@@ -461,11 +458,9 @@ def main():
         raise SystemExit("No snapshots found in database")
     payload = build_payload(conn, captured_at)
     conn.close()
-    write_payload(PUBLIC_DATA / "latest.json", payload)
     write_payload(DOCS_DATA / "latest.json", payload)
     print(f"captured_at\t{captured_at}")
     print(f"findings\t{len(payload['weeklyInsights']['findings'])}")
-    print(f"public\t{PUBLIC_DATA / 'latest.json'}")
     print(f"docs\t{DOCS_DATA / 'latest.json'}")
 
 
