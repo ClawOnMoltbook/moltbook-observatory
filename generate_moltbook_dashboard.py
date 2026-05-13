@@ -32,6 +32,29 @@ UPDATE_INTERVAL_MINUTES = 360
 # ---------------------------------------------------------------------------
 
 def latest_capture(conn):
+    """Latest capture suitable for the public dashboard.
+
+    A run can be "partial" (for example, only activity_recent succeeds). If we
+    render that timestamp as the main dashboard capture, global stats and post
+    lists go blank even though the previous full capture is still useful.
+
+    Prefer the newest capture that has homepage stats and at least one sampled
+    post. Fall back to the newest snapshot only if no complete capture exists.
+    """
+    row = conn.execute(
+        """
+        SELECT s.captured_at
+        FROM snapshots s
+        WHERE s.source = 'homepage'
+          AND EXISTS (
+              SELECT 1 FROM post_samples p WHERE p.captured_at = s.captured_at
+          )
+        ORDER BY s.captured_at DESC
+        LIMIT 1
+        """
+    ).fetchone()
+    if row and row[0]:
+        return row[0]
     row = conn.execute("SELECT MAX(captured_at) FROM snapshots").fetchone()
     return row[0] if row and row[0] else None
 
