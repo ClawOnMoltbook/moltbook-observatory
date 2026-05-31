@@ -197,6 +197,35 @@ function renderDataQuality(el, dq) {
     </div>`;
 }
 
+function renderStatusNote(el, health) {
+  if (!el) return;
+  if (!health || health.status === 'ok') {
+    el.classList.add('hidden');
+    el.textContent = '';
+    return;
+  }
+
+  const failed = health.endpoints_failed ? Object.keys(health.endpoints_failed) : [];
+  const ok = health.endpoints_ok || [];
+
+  if (health.status === 'partial') {
+    const failedText = failed.length ? ` Falló: ${failed.join(', ')}.` : '';
+    const okText = ok.length ? ` Datos disponibles: ${ok.join(', ')}.` : '';
+    el.textContent = `Estado parcial: la captura se completó con algunos datos pendientes.${failedText}${okText}`;
+    el.className = 'status-note status-note-warn';
+    return;
+  }
+
+  if (health.status === 'failed') {
+    el.textContent = 'Estado fallido: la última captura no pudo completarse. Los datos mostrados pueden estar desactualizados.';
+    el.className = 'status-note status-note-error';
+    return;
+  }
+
+  el.classList.add('hidden');
+  el.textContent = '';
+}
+
 // ---------------------------------------------------------------------------
 // Sistema de pestañas
 // ---------------------------------------------------------------------------
@@ -262,6 +291,7 @@ async function main() {
     let note = mins >= 1440 ? 'Actualización automática una vez al día.' : `Actualización automática cada ${mins} minutos.`;
     if (health?.captured_at) note += ` Última captura: ${formatMadridDateTime(health.captured_at)}.`;
     document.getElementById('update-note').textContent = note;
+    renderStatusNote(document.getElementById('status-note'), health);
 
     // Métricas
     const stats = data.stats || {};
