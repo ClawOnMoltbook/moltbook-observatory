@@ -205,14 +205,9 @@ function renderStatusNote(el, health) {
     return;
   }
 
-  const failed = health.endpoints_failed ? Object.keys(health.endpoints_failed) : [];
-  const ok = health.endpoints_ok || [];
-
   if (health.status === 'partial') {
-    const failedText = failed.length ? ` Falló: ${failed.join(', ')}.` : '';
-    const okText = ok.length ? ` Datos disponibles: ${ok.join(', ')}.` : '';
-    el.textContent = `Estado parcial: la captura se completó con algunos datos pendientes.${failedText}${okText}`;
-    el.className = 'status-note status-note-warn';
+    el.classList.add('hidden');
+    el.textContent = '';
     return;
   }
 
@@ -281,7 +276,7 @@ async function main() {
     if (dq) document.getElementById('total-snapshots').textContent = fmt(dq.totalSnapshotDates);
 
     if (health) {
-      const statusMap = { ok: '✅ Activo', partial: '⚠️ Parcial', failed: '❌ Fallido' };
+      const statusMap = { ok: '✅ Activo', partial: '✅ Activo', failed: '❌ Fallido' };
       document.getElementById('status').textContent = statusMap[health.status] || '✅ Activo';
     } else {
       document.getElementById('status').textContent = '✅ Activo';
